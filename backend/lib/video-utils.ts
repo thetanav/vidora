@@ -1,16 +1,12 @@
 import path from "path";
 import { mkdir } from "fs/promises";
+import { redis } from "../lib/redis";
 
-export async function processVideo(
-  queue: {
-    name: string;
-    ext: string;
-  }[]
-) {
-  const job = queue[0];
+export async function processVideo() {
+  const job = await redis.rpop("video-queue");
   if (!job) return;
 
-  const { name, ext } = job;
+  const { name, ext } = await JSON.parse(job);
   console.log("Processing file:", name);
 
   const inputPath = path.join(process.cwd(), "tmp", `${name}.${ext}`);
@@ -21,9 +17,6 @@ export async function processVideo(
 
   // ✅ ensure output directory exists
   await mkdir(outputDir, { recursive: true });
-
-  // now remove from queue
-  queue.shift();
 
   const proc = Bun.spawn(
     [
@@ -56,7 +49,7 @@ export async function processVideo(
   if (exitCode !== 0) {
     console.error("FFmpeg error:\n", stderrText);
 
-    queue.push({ name, ext });
+    await redis.lpush("video-queue", JSON.stringify({ name, ext }));
     return;
   }
 

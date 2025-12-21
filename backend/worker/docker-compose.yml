@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  ffmpeg-worker:
+    build: ./worker
+    volumes:
+      - ./output:/output
+      - ./tmp:/tmp
+    depends_on:
+      - redis

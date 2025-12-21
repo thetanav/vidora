@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { video } from "./video";
+import { video } from "./routes/video";
 import { cors } from "@elysiajs/cors";
 import staticPlugin from "@elysiajs/static";
 
