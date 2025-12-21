@@ -1,3 +1,5 @@
-import { Redis } from "ioredis";
-
-export const redis = new Redis(Bun.env.REDIS_URL!);
+import { Redis } from "@upstash/redis";
+export const redis = new Redis({
+  url: "https://enhanced-mollusk-12309.upstash.io",
+  token: "ATAVAAIncDI0NjkwMzI3ODEwZjQ0YTE1YjJlZGQyZWVkNDRhODBiMHAyMTIzMDk",
+});

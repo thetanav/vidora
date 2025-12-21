@@ -43,7 +43,7 @@ export default function VideoUpload() {
   };
 
   return (
-    <div style={{ maxWidth: 400 }}>
+    <div>
       <h2>Upload video</h2>
 
       <input

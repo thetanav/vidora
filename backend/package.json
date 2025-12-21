@@ -10,8 +10,8 @@
     "@elysiajs/static": "^1.4.7",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
+    "@upstash/redis": "^1.35.8",
     "elysia": "latest",
-    "ioredis": "^5.8.2",
     "nanoid": "^5.1.6",
     "pg": "^8.16.3",
     "zod": "^4.2.1"

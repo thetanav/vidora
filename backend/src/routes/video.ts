@@ -2,7 +2,6 @@ import Elysia from "elysia";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import path from "path";
-import { processVideo } from "../../lib/video-utils";
 import { redis } from "../../lib/redis";
 
 export const video = new Elysia({ prefix: "/video" })
@@ -50,9 +49,9 @@ export const video = new Elysia({ prefix: "/video" })
     },
     {
       body: z.object({
-        title: z.string(),
-        description: z.string(),
-        tags: z.array(z.string()),
+        // title: z.string(),
+        // description: z.string(),
+        // tags: z.array(z.string()),
         video: z
           .instanceof(File)
           .refine((file) => file.size <= 500 * 1024 * 1024, {
@@ -73,5 +72,3 @@ export const video = new Elysia({ prefix: "/video" })
     }
   )
   .get("/:id", ({ params }) => {});
-
-setInterval(async () => await processVideo(), 10000);
