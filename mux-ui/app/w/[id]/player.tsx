@@ -1,48 +1,48 @@
 "use client";
 
-import ReactPlayer from "react-player";
-import {
-  MediaController,
-  MediaControlBar,
-  MediaTimeRange,
-  MediaTimeDisplay,
-  MediaVolumeRange,
-  MediaPlaybackRateButton,
-  MediaPlayButton,
-  MediaSeekBackwardButton,
-  MediaSeekForwardButton,
-  MediaMuteButton,
-  MediaFullscreenButton,
-} from "media-chrome/react";
+import { useEffect, useRef } from "react";
+import videojs from "video.js";
+import "video.js/dist/video-js.css";
+
+import "videojs-contrib-quality-levels";
+import "videojs-hls-quality-selector";
 
 export default function Player({ id }: { id: string }) {
-  return (
-    <MediaController
-      style={{
-        width: "100%",
+  const videoRef: any = useRef(null);
+  const playerRef: any = useRef(null);
 
-        aspectRatio: "16/9",
-      }}>
-      <ReactPlayer
-        slot="media"
-        src={`http://localhost:3000/video/${id}/index.m3u8`}
-        draggable={false}
-        controls={false}
-        style={{
-          width: "100%",
-          height: "100%",
-        }}></ReactPlayer>
-      <MediaControlBar>
-        <MediaPlayButton />
-        <MediaSeekBackwardButton seekOffset={10} />
-        <MediaSeekForwardButton seekOffset={10} />
-        <MediaTimeRange />
-        <MediaTimeDisplay showDuration />
-        <MediaMuteButton />
-        <MediaVolumeRange />
-        <MediaPlaybackRateButton />
-        <MediaFullscreenButton />
-      </MediaControlBar>
-    </MediaController>
+  useEffect(() => {
+    if (!playerRef.current) {
+      playerRef.current = videojs(videoRef.current, {
+        controls: true,
+        responsive: false,
+        fluid: false,
+        autoplay: false,
+        preload: "auto",
+        sources: [
+          {
+            src: `http://localhost:3000/data/${id}/index.m3u8`,
+            type: "application/x-mpegURL",
+          },
+        ],
+      });
+
+      playerRef.current.hlsQualitySelector({
+        displayCurrentQuality: true,
+      });
+    }
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.dispose();
+        playerRef.current = null;
+      }
+    };
+  }, [id]);
+
+  return (
+    <div className="w-108">
+      <video ref={videoRef} className="video-js vjs-default-skin" />
+    </div>
   );
 }

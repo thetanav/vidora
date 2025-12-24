@@ -18,7 +18,7 @@ const resolutions = [
 async function encodeResolution(inputPath, outputDir, resolution) {
     return new Promise((resolve, reject) => {
         const playlistPath = path.join(outputDir, `${resolution.name}.m3u8`);
-        const segmentPattern = path.join(outputDir, `${resolution.name}_%03d.ts`);
+        const segmentPattern = path.join(outputDir, `${resolution.name}/${resolution.name}_%03d.ts`);
 
         const ffmpeg = spawn("ffmpeg", [
             "-y",
