@@ -46,7 +46,7 @@ async function encodeResolution(inputPath, outputDir, resolution) {
 }
 
 function createMasterPlaylist(outputDir, name) {
-    const masterPath = path.join(outputDir, "index.m3u8");
+    const masterPath = path.join(outputDir, "master.m3u8");
     let content = "#EXTM3U\n#EXT-X-VERSION:3\n";
 
     resolutions.forEach((res) => {

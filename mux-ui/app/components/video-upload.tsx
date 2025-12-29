@@ -42,30 +42,27 @@ export default function VideoUpload() {
     const formData = new FormData();
     formData.append("title", title.trim());
     formData.append("description", description.trim());
-    formData.append("video", file);
+    formData.append("video", file, file.name);
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE}/video/upload`);
+    xhr.timeout = 0;
+    xhr.withCredentials = true;
 
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) return;
-      const percent = Math.round((event.loaded / event.total) * 100);
-      setState({ status: "uploading", progress: percent });
+    xhr.upload.onprogress = (e) => {
+      if (!e.lengthComputable) return;
+      setState({
+        status: "uploading",
+        progress: Math.round((e.loaded / e.total) * 100),
+      });
     };
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const json = JSON.parse(xhr.responseText) as { id: string };
-          setState({ status: "done", id: json.id });
-        } catch {
-          setState({ status: "done", id: "" });
-        }
+        const json = JSON.parse(xhr.responseText);
+        setState({ status: "done", id: json.id });
       } else {
-        setState({
-          status: "error",
-          message: xhr.responseText || "Upload failed",
-        });
+        setState({ status: "error", message: xhr.responseText });
       }
     };
 
@@ -130,10 +127,12 @@ export default function VideoUpload() {
                 <span className="font-medium">Name:</span> {file.name}
               </div>
               <div>
-                <span className="font-medium">Size:</span> {formatBytes(file.size)}
+                <span className="font-medium">Size:</span>{" "}
+                {formatBytes(file.size)}
               </div>
               <div>
-                <span className="font-medium">Type:</span> {file.type || "unknown"}
+                <span className="font-medium">Type:</span>{" "}
+                {file.type || "unknown"}
               </div>
             </div>
           )}
@@ -153,7 +152,11 @@ export default function VideoUpload() {
                 <span>Progress</span>
                 <span>{state.progress}%</span>
               </div>
-              <progress className="mt-1 h-2 w-full" value={state.progress} max={100} />
+              <progress
+                className="mt-1 h-2 w-full"
+                value={state.progress}
+                max={100}
+              />
             </div>
           )}
         </div>
@@ -164,7 +167,9 @@ export default function VideoUpload() {
             {state.id && (
               <div className="mt-1 opacity-80">
                 Watch:{" "}
-                <a className="underline" href={`/w/${state.id}`}>{`/w/${state.id}`}</a>
+                <a
+                  className="underline"
+                  href={`/w/${state.id}`}>{`/w/${state.id}`}</a>
               </div>
             )}
             <div className="mt-1 opacity-80">Processing can take a bit.</div>
@@ -174,7 +179,9 @@ export default function VideoUpload() {
         {state.status === "error" && (
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm">
             <div className="font-medium">Upload failed</div>
-            <div className="mt-1 whitespace-pre-wrap opacity-80">{state.message}</div>
+            <div className="mt-1 whitespace-pre-wrap opacity-80">
+              {state.message}
+            </div>
           </div>
         )}
       </div>
