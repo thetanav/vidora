@@ -16,10 +16,13 @@ import { File, Upload } from "lucide-react";
 import { UploadButton } from "./uploadthing";
 
 import { nanoid } from "nanoid";
+import { useRouter } from "next/navigation";
 
 export default function VideoUpload() {
+  const router = useRouter();
   const [file, setFile] = useState<any | null>(null);
   const [title, setTitle] = useState("");
+  const [extension, setExtension] = useState<string | null>(null);
   const [description, setDescription] = useState("");
   const [id, setId] = useState("");
 
@@ -95,6 +98,7 @@ export default function VideoUpload() {
                 onClientUploadComplete={(res) => {
                   // Do something with the response
                   setFile(res[0]);
+                  setExtension(res[0].name?.split(".").pop()!);
                 }}
                 onUploadError={(error: Error) => {
                   // Do something with the error.
@@ -104,12 +108,24 @@ export default function VideoUpload() {
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button disabled={!file} size="lg">
-              <Upload className="mr-2 h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            disabled={!file}
+            size="lg"
+            onClick={() => {
+              fetch(`http://localhost:3000/video/upload`, {
+                method: "POST",
+                body: JSON.stringify({
+                  title,
+                  description,
+                  id,
+                  extension,
+                }),
+              });
+              router.push("/");
+            }}>
+            <Upload className="h-4 w-4" />
+            Upload
+          </Button>
         </CardContent>
       </Card>
     </div>

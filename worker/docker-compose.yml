@@ -1,9 +1,6 @@
 services:
   worker:
     build: .
-    volumes:
-      - ../backend/tmp:/tmp
-      - ../backend/output:/output
     command: npm run dev
     develop:
       watch:

@@ -2,11 +2,33 @@ import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import { Redis } from "@upstash/redis";
+import dotenv from "dotenv";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import fetch from "node-fetch";
 
-const redis = new Redis({
-    url: "https://enhanced-mollusk-12309.upstash.io",
-    token: "ATAVAAIncDI0NjkwMzI3ODEwZjQ0YTE1YjJlZGQyZWVkNDRhODBiMHAyMTIzMDk",
+dotenv.config();
+
+const redis = Redis.fromEnv();
+
+import { S3Client } from "@aws-sdk/client-s3";
+
+export const r2 = new S3Client({
+    region: "auto",
+    endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    },
 });
+
+// await r2.send(
+//     new PutObjectCommand({
+//         Bucket: "videos",
+//         Key: "videos/abc/480p/index.m3u8",
+//         Body: fs.createReadStream("./out/index.m3u8"),
+//         ContentType: "application/vnd.apple.mpegurl",
+//     })
+// );
 
 const resolutions = [
     { name: "240p", height: 240, bitrate: "400k" },
@@ -55,12 +77,26 @@ function createMasterPlaylist(outputDir, name) {
         content += `${res.name}.m3u8\n`;
     });
 
-    fs.writeFileSync(masterPath, content);
+    fs.writeFileSync(masterPath, content); // write to name/index.m3u8
 }
 
 async function processJob(name, ext) {
-    const inputPath = path.join("/tmp", `${name}.${ext}`);
-    const outputDir = path.join("/output", name);
+    // download this to tmp/
+    const url = `https://odr537djvh.ufs.sh/f/tmp/${name}.${ext}`;
+
+    const inputPath = `${name}.${ext}`
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Download failed");
+
+    const stream = fs.createWriteStream(inputPath);
+    await new Promise((resolve, reject) => {
+        res.body.pipe(stream);
+        res.body.on("error", reject);
+        stream.on("finish", resolve);
+    });
+
+    const outputDir = name;
 
     try {
         // Check if input file exists
@@ -82,12 +118,32 @@ async function processJob(name, ext) {
 
         fs.unlinkSync(inputPath);
 
+        // Upload the :name: folder to R2
+        const files = fs.readdirSync(outputDir);
+        for (const file of files) {
+            const filePath = path.join(outputDir, file);
+            const contentType = file.endsWith(".m3u8")
+                ? "application/vnd.apple.mpegurl"
+                : "video/mp2t";
+
+            await r2.send(
+                new PutObjectCommand({
+                    Bucket: "videos",
+                    Key: `${name}/${file}`,
+                    Body: fs.createReadStream(filePath),
+                    ContentType: contentType,
+                })
+            );
+            console.log(`Uploaded ${name}/${file}`);
+        }
+
+        // Delete the output folder
+        fs.rmSync(outputDir, { recursive: true });
+
         console.log(`Successfully processed ${name}`);
-        await redis.lpush("video-processed", JSON.stringify({ name, ext }));
 
     } catch (error) {
         console.error(`Error processing ${name}:`, error.message);
-        await redis.lpush("video-crashed", JSON.stringify({ name, ext, error: error.message }));
     }
 }
 
@@ -106,7 +162,7 @@ async function main() {
             await processJob(name, ext);
             console.log(">> Job processed", job);
         } catch (error) {
-            console.error(">> Error processing job");
+            console.error(">> Error processing job:", error.message);
         }
     }
 }

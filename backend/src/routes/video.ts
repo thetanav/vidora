@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import path from "path";
 import { redis } from "../../lib/redis";
+import db from "../../lib/db";
 
 type VideoMeta = {
   id: string;
@@ -21,18 +22,26 @@ type PlaybackInfo = {
 export const video = new Hono();
 
 video.post("/upload", async (c) => {
-  const { title, description, videoUrl, videoName } = await c.req.json();
+  const { title, description, id, extension } = await c.req.json();
 
-  const extension = videoName.split(".").pop()!;
+  await db.video.create({
+    data: {
+      id,
+      title,
+      description,
+      duration: 0,
+      views: 0,
+      likes: 0,
+    },
+  });
 
   await redis.lpush(
     "video-queue",
-    JSON.stringify({ name: videoName, ext: extension })
+    JSON.stringify({ name: id, ext: extension })
   );
 
   return c.json({
     message: "Upload successful",
-    videoName,
   });
 });
 
