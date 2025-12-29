@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 export const VideoInfo = ({ id }: { id: string }) => {
   return (
     <div className="mt-4 mb-2">
@@ -12,9 +14,9 @@ export const VideoInfo = ({ id }: { id: string }) => {
         </div>
 
         <div className="flex gap-3 mr-4">
-          <button>👍 123</button>
-          <button>👎 2</button>
-          <button>🔗</button>
+          <Button>👍 123</Button>
+          <Button>👎 2</Button>
+          <Button>🔗</Button>
         </div>
       </div>
     </div>

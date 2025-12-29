@@ -1,6 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CheckCircle2, AlertCircle, Upload } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3000";
 
@@ -35,8 +43,12 @@ export default function VideoUpload() {
   }, [file, title, state.status]);
 
   const uploadVideo = async () => {
-    if (!file) return;
+    if (!file) {
+      console.error("No file selected");
+      return;
+    }
 
+    console.log("Starting upload:", { title, fileName: file.name, fileSize: file.size });
     setState({ status: "uploading", progress: 0 });
 
     const formData = new FormData();
@@ -58,15 +70,19 @@ export default function VideoUpload() {
     };
 
     xhr.onload = () => {
+      console.log("Upload response:", { status: xhr.status, body: xhr.responseText });
       if (xhr.status >= 200 && xhr.status < 300) {
         const json = JSON.parse(xhr.responseText);
+        console.log("Upload successful:", json);
         setState({ status: "done", id: json.id });
       } else {
+        console.error("Upload failed:", xhr.status, xhr.responseText);
         setState({ status: "error", message: xhr.responseText });
       }
     };
 
     xhr.onerror = () => {
+      console.error("Network error during upload");
       setState({ status: "error", message: "Network error" });
     };
 
@@ -75,116 +91,144 @@ export default function VideoUpload() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-semibold">Upload video</h1>
-      <p className="mt-1 text-sm opacity-80">
-        Add a title + description, then upload your video.
-      </p>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Upload Video</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Add a title and description, then upload your video to get started.
+        </p>
+      </div>
 
-      <div className="mt-8 space-y-5 rounded-xl border border-black/10 bg-black/[0.02] p-5 dark:border-white/10 dark:bg-white/[0.04]">
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="title">
-            Title
-          </label>
-          <input
-            id="title"
-            value={title}
-            maxLength={120}
-            placeholder="A great title (required)"
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-black/10 bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/20 dark:border-white/10 dark:focus:ring-white/20"
-          />
-          <div className="text-xs opacity-60">{title.trim().length}/120</div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="description">
-            Description
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            placeholder="Tell viewers what this video is about"
-            onChange={(e) => setDescription(e.target.value)}
-            rows={5}
-            className="w-full resize-y rounded-lg border border-black/10 bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/20 dark:border-white/10 dark:focus:ring-white/20"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="file">
-            Video file
-          </label>
-          <input
-            id="file"
-            type="file"
-            accept="video/*"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm"
-          />
-          {file && (
-            <div className="text-xs opacity-70">
-              <div>
-                <span className="font-medium">Name:</span> {file.name}
-              </div>
-              <div>
-                <span className="font-medium">Size:</span>{" "}
-                {formatBytes(file.size)}
-              </div>
-              <div>
-                <span className="font-medium">Type:</span>{" "}
-                {file.type || "unknown"}
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Video Details</CardTitle>
+          <CardDescription>
+            Fill in the information about your video
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Title Field */}
+          <div className="space-y-2">
+            <Label htmlFor="title">
+              Title <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="title"
+              value={title}
+              maxLength={120}
+              placeholder="A great title (required)"
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <div className="text-xs text-muted-foreground">
+              {title.trim().length} / 120 characters
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={uploadVideo}
-            disabled={!canUpload}
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black">
-            {state.status === "uploading" ? "Uploading…" : "Upload"}
-          </button>
+          {/* Description Field */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              placeholder="Tell viewers what this video is about..."
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
 
-          {state.status === "uploading" && (
-            <div className="min-w-[220px]">
-              <div className="flex items-center justify-between text-xs opacity-80">
-                <span>Progress</span>
-                <span>{state.progress}%</span>
-              </div>
-              <progress
-                className="mt-1 h-2 w-full"
-                value={state.progress}
-                max={100}
-              />
-            </div>
-          )}
-        </div>
-
-        {state.status === "done" && (
-          <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm">
-            <div className="font-medium">Upload complete</div>
-            {state.id && (
-              <div className="mt-1 opacity-80">
-                Watch:{" "}
-                <a
-                  className="underline"
-                  href={`/w/${state.id}`}>{`/w/${state.id}`}</a>
+          {/* Video File Field */}
+          <div className="space-y-2">
+            <Label htmlFor="file">
+              Video File <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="file"
+              type="file"
+              accept="video/*"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+            {file && (
+              <div className="mt-3 rounded-md bg-secondary/50 p-3 text-sm">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Name:</span>
+                    <span className="text-muted-foreground">{file.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Size:</span>
+                    <span className="text-muted-foreground">
+                      {formatBytes(file.size)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Type:</span>
+                    <span className="text-muted-foreground">
+                      {file.type || "unknown"}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
-            <div className="mt-1 opacity-80">Processing can take a bit.</div>
           </div>
-        )}
 
-        {state.status === "error" && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm">
-            <div className="font-medium">Upload failed</div>
-            <div className="mt-1 whitespace-pre-wrap opacity-80">
-              {state.message}
+          {/* Progress Bar */}
+          {state.status === "uploading" && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Upload Progress</span>
+                <span className="text-sm font-semibold">{state.progress}%</span>
+              </div>
+              <Progress value={state.progress} />
             </div>
+          )}
+
+          {/* Success Alert */}
+          {state.status === "done" && (
+            <Alert variant="success">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>Upload Complete!</AlertTitle>
+              <AlertDescription>
+                <div className="space-y-2">
+                  <p>Your video has been uploaded successfully.</p>
+                  <p className="text-xs">
+                    Processing can take a few moments. You can watch your video
+                    here:{" "}
+                    <a
+                      href={`/w/${state.id}`}
+                      className="font-semibold underline hover:no-underline"
+                    >
+                      /w/{state.id}
+                    </a>
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Error Alert */}
+          {state.status === "error" && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Upload Failed</AlertTitle>
+              <AlertDescription>
+                <p className="whitespace-pre-wrap font-mono text-xs">
+                  {state.message}
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              onClick={uploadVideo}
+              disabled={!canUpload}
+              size="lg"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {state.status === "uploading" ? "Uploading…" : "Upload Video"}
+            </Button>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

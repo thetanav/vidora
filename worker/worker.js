@@ -18,7 +18,7 @@ const resolutions = [
 async function encodeResolution(inputPath, outputDir, resolution) {
     return new Promise((resolve, reject) => {
         const playlistPath = path.join(outputDir, `${resolution.name}.m3u8`);
-        const segmentPattern = path.join(outputDir, `${resolution.name}/${resolution.name}_%03d.ts`);
+        const segmentPattern = path.join(outputDir, `${resolution.name}_%03d.ts`);
 
         const ffmpeg = spawn("ffmpeg", [
             "-y",
@@ -46,7 +46,7 @@ async function encodeResolution(inputPath, outputDir, resolution) {
 }
 
 function createMasterPlaylist(outputDir, name) {
-    const masterPath = path.join(outputDir, "master.m3u8");
+    const masterPath = path.join(outputDir, "index.m3u8");
     let content = "#EXTM3U\n#EXT-X-VERSION:3\n";
 
     resolutions.forEach((res) => {

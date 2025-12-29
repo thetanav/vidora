@@ -6,17 +6,16 @@ import { video } from "./routes/video";
 
 const app = new Hono();
 
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: "http://localhost:3001" }));
 // app.use(compress());
 app.route("/video", video);
-app.get(
-  "/data/*",
+app.use(
+  "/video/*",
   serveStatic({
-    root: "./",
-    rewriteRequestPath: (path) => path.replace(/^\/data/, "/output"),
+    root: "./output",
+    rewriteRequestPath: (path) => path.replace(/^\/video/, ""),
   })
 );
-// app.use("*.m3u8", compress());
 
 Bun.serve({
   fetch: app.fetch,

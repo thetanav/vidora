@@ -10,6 +10,7 @@ export default function Player({ id }: { id: string }) {
       controls
       width="100%"
       height="60vh"
+      className="rounded-xl overflow-auto bg-black"
     />
   );
 }
