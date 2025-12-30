@@ -112,8 +112,9 @@ export default function VideoUpload() {
             disabled={!file}
             size="lg"
             onClick={() => {
-              fetch(`http://localhost:3000/video/upload`, {
+              fetch(`/api/video/upload`, {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   title,
                   description,

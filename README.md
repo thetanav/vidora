@@ -6,31 +6,45 @@ A full-stack video upload, processing, and streaming platform built with modern 
 
 The platform consists of three main components:
 
-### Backend (`backend/`)
-- **Framework**: Elysia.js with Bun runtime
-- **Database**: PostgreSQL with Prisma ORM
-- **Queue**: Redis (Upstash) for job processing
-- **Features**: Video upload API, static file serving, CORS support
-
 ### Frontend (`mux-ui/`)
 - **Framework**: Next.js 16 with React 19
+- **API**: Hono.js for route handlers
 - **Styling**: TailwindCSS
-- **Player**: React Player with Media Chrome controls
-- **Features**: Video upload interface, video player with adaptive streaming
+- **Player**: React Player with direct R2 streaming
+- **Features**: Video upload interface, video player with adaptive streaming, API routes for metadata
+- **Deployment**: Vercel (recommended)
+
+### Backend (`backend/`)
+- **Framework**: Hono.js with Bun runtime
+- **Database**: PostgreSQL with Prisma ORM
+- **Queue**: Redis (Upstash) for job processing
+- **Features**: Video metadata API, Redis state management, CORS support
+- **Deployment**: Can be deployed to Railway, Render, or self-hosted
 
 ### Worker (`worker/`)
 - **Runtime**: Node.js
 - **Processing**: FFmpeg for video encoding
 - **Queue**: Redis for job management
+- **Storage**: Cloudflare R2 for HLS output
 - **Output**: HLS streams with multiple resolutions (240p, 480p, 720p, 1080p)
 
 ## Features
 
 - **Video Upload**: Support for MP4, WebM, and MKV formats (up to 500MB)
 - **Automatic Encoding**: Background processing with multiple resolution outputs
-- **Adaptive Streaming**: HLS with bitrate adaptation
+- **Adaptive Streaming**: HLS with direct R2 CDN delivery
 - **Progress Tracking**: Real-time upload progress in the UI
 - **Video Playback**: Custom player with full controls
+- **Serverless API**: Hono.js in Next.js for metadata management
+- **Scalable Storage**: Cloudflare R2 for video delivery
+
+## Tech Stack
+
+- **Frontend**: Next.js, React 19, Hono.js, TypeScript, TailwindCSS
+- **Backend**: Hono.js, Bun, Prisma, PostgreSQL, Redis
+- **Worker**: Node.js, FFmpeg, Redis
+- **Storage**: Cloudflare R2 (public bucket)
+- **Deployment**: Vercel (frontend), Railway/Render (backend), Docker (worker)
 
 ## Tech Stack
 
@@ -117,7 +131,46 @@ Ensure FFmpeg is installed on your system for video processing.
    docker-compose up --build
    ```
 
-### Production Mode
+### Production Deployment
+
+### Vercel (Frontend)
+
+1. Set environment variables in Vercel dashboard:
+   - `NEXT_PUBLIC_R2_PUBLIC_URL`: Your R2 bucket public URL
+   - `ALLOWED_ORIGINS`: Your Vercel domain and localhost
+
+2. Deploy:
+   ```bash
+   cd mux-ui
+   bun run build
+   vercel --prod
+   ```
+
+### Railway/Render (Backend)
+
+1. Set environment variables:
+   - `DATABASE_URL`: PostgreSQL connection string
+   - `UPSTASH_REDIS_REST_URL`: Redis connection URL
+   - `UPSTASH_REDIS_REST_TOKEN`: Redis auth token
+   - `ALLOWED_ORIGINS`: Your domains
+
+2. Deploy using Railway CLI or connect git repo
+
+### Worker (Docker)
+
+```bash
+cd worker
+docker-compose up -d
+```
+
+Set environment variables in `worker/.env`:
+- `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare account ID
+- `R2_ACCESS_KEY_ID`: R2 access key
+- `R2_SECRET_ACCESS_KEY`: R2 secret key
+- `UPSTASH_REDIS_REST_URL`: Redis connection URL
+- `UPSTASH_REDIS_REST_TOKEN`: Redis auth token
+
+## Production Mode
 
 ```bash
 # Frontend
@@ -127,25 +180,41 @@ bun run start
 
 # Backend
 cd backend
-bun run build  # If building is configured
+bun run dev  # No build step needed for Bun
 ```
 
 ## API Endpoints
 
+### Frontend API (`/api/*`)
+
+- `GET /api/health` - Health check endpoint
+- `POST /api/video/upload` - Create video metadata entry
+  - Accepts: `{ title, description, id, extension }`
+  - Forwards to backend for processing
+  - Returns: `{ message: string }`
+
+- `GET /api/video/:id` - Get video metadata and R2 URLs
+  - Returns: `{ id, title, description, status, playback, r2Playlist }`
+
 ### Backend API (`http://localhost:3000`)
 
-- `POST /video/upload` - Upload a video file
-  - Accepts multipart/form-data with `video` field
-  - Supported formats: MP4, WebM, MKV
-  - Max size: 500MB
-  - Returns: `{ message: string, id: string }`
+- `POST /video/upload` - Create video metadata and queue job
+  - Accepts: `{ title, description, id, extension }`
+  - Creates DB entry and queues Redis job
+  - Returns: `{ message: string }`
 
-- `GET /video/:id/index.m3u8` - Stream master playlist
-- `GET /video/:id/:resolution.m3u8` - Stream specific resolution playlist
-- `GET /video/:id/:segment.ts` - Stream video segments
+- `GET /video/:id` - Get video metadata with R2 URLs
+  - Returns: `{ id, title, description, status, playback, r2Playlist }`
+
+### R2 Direct Streaming (Public)
+
+- `https://pub-0d1c3c0b8f8f4d9b90c3c0b8f8f4d9b.r2.dev/:id/index.m3u8` - Master playlist
+- `https://pub-0d1c3c0b8f8f4d9b90c3c0b8f8f4d9b.r2.dev/:id/:resolution.m3u8` - Resolution playlist
+- `https://pub-0d1c3c0b8f8f4d9b90c3c0b8f8f4d9b.r2.dev/:id/:segment.ts` - Video segment
 
 ### Frontend Routes
 
+- `/` - Home page (with upload link)
 - `/upload` - Video upload interface
 - `/w/:id` - Video player for specific video ID
 

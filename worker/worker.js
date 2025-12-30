@@ -1,10 +1,9 @@
-import { spawn } from "child_process";
+import { spawn, execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { Redis } from "@upstash/redis";
 import dotenv from "dotenv";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import fetch from "node-fetch";
 
 dotenv.config();
 
@@ -21,14 +20,7 @@ export const r2 = new S3Client({
     },
 });
 
-// await r2.send(
-//     new PutObjectCommand({
-//         Bucket: "videos",
-//         Key: "videos/abc/480p/index.m3u8",
-//         Body: fs.createReadStream("./out/index.m3u8"),
-//         ContentType: "application/vnd.apple.mpegurl",
-//     })
-// );
+const tmpDir = "tmp";
 
 const resolutions = [
     { name: "240p", height: 240, bitrate: "400k" },
@@ -62,7 +54,13 @@ async function encodeResolution(inputPath, outputDir, resolution) {
         ffmpeg.on("exit", (code) => {
             if (code === 0) {
                 resolve();
+            } else {
+                reject(new Error(`ffmpeg exited with code ${code}`));
             }
+        });
+
+        ffmpeg.on("error", (err) => {
+            reject(err);
         });
     });
 }
@@ -80,25 +78,110 @@ function createMasterPlaylist(outputDir, name) {
     fs.writeFileSync(masterPath, content); // write to name/index.m3u8
 }
 
-async function processJob(name, ext) {
-    // download this to tmp/
-    const url = `https://odr537djvh.ufs.sh/f/tmp/${name}.${ext}`;
+export async function downloadUploadThing(url, outPath) {
+    console.log(`Fetching from URL: ${url}`);
 
-    const inputPath = `${name}.${ext}`
+    // Use curl for more reliable downloads (handles redirects, timeouts better)
+    try {
+        execSync(`curl -L --fail --max-time 300 -o "${outPath}" "${url}"`, {
+            stdio: 'inherit'
+        });
+    } catch (error) {
+        throw new Error(`Download failed: ${error.message}`);
+    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Download failed");
+    // Verify the file was downloaded and is valid
+    if (!fs.existsSync(outPath)) {
+        throw new Error("Download failed: file not created");
+    }
 
-    const stream = fs.createWriteStream(inputPath);
-    await new Promise((resolve, reject) => {
-        res.body.pipe(stream);
-        res.body.on("error", reject);
-        stream.on("finish", resolve);
-    });
+    const stats = fs.statSync(outPath);
+    if (stats.size === 0) {
+        fs.unlinkSync(outPath);
+        throw new Error("Downloaded file is empty");
+    }
 
-    const outputDir = name;
+    // Check if the downloaded file is actually HTML (error page)
+    const buffer = Buffer.alloc(100);
+    const fd = fs.openSync(outPath, 'r');
+    fs.readSync(fd, buffer, 0, 100, 0);
+    fs.closeSync(fd);
+    const header = buffer.toString('utf8').toLowerCase();
+
+    if (header.includes('<!doctype html') || header.includes('<html')) {
+        fs.unlinkSync(outPath);
+        throw new Error("Download failed: received HTML error page instead of video file");
+    }
+
+    console.log(`Downloaded ${stats.size} bytes to ${outPath}`);
+}
+
+// tmp -> name.ext
+//        name/index.m3u8
+//        name/240p.m3u8
+//        name/480p.m3u8
+//        name/720p.m3u8
+//        name/1080p.m3u8
+
+
+async function uploadToR2(filePath, key, contentType, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const fileStream = fs.createReadStream(filePath);
+            await r2.send(
+                new PutObjectCommand({
+                    Bucket: "videos",
+                    Key: key,
+                    Body: fileStream,
+                    ContentType: contentType,
+                })
+            );
+            console.log(`Uploaded ${key}`);
+            return;
+        } catch (error) {
+            console.error(`Upload attempt ${attempt}/${retries} failed for ${key}:`, error.message);
+            if (attempt === retries) {
+                throw new Error(`Failed to upload ${key} after ${retries} attempts`);
+            }
+            await new Promise((res) => setTimeout(res, 1000 * attempt));
+        }
+    }
+}
+
+function cleanup(paths) {
+    for (const p of paths) {
+        try {
+            if (fs.existsSync(p)) {
+                const stat = fs.statSync(p);
+                if (stat.isDirectory()) {
+                    fs.rmSync(p, { recursive: true });
+                } else {
+                    fs.unlinkSync(p);
+                }
+            }
+        } catch (err) {
+            console.error(`Cleanup failed for ${p}:`, err.message);
+        }
+    }
+}
+
+async function processJob(job) {
+    const { name, ext, url: jobUrl } = job;
+    // Use URL from job if provided, otherwise construct it
+    const url = jobUrl || `https://odr537djvh.ufs.sh/f/tmp/${name}.${ext}`;
+    const inputPath = path.join(tmpDir, `${name}.${ext}`);
+    const outputDir = path.join(tmpDir, name);
 
     try {
+        // Ensure tmp directory exists
+        if (!fs.existsSync(tmpDir)) {
+            fs.mkdirSync(tmpDir, { recursive: true });
+        }
+
+        // Download the video
+        console.log(`Downloading ${name}.${ext}...`);
+        await downloadUploadThing(url, inputPath);
+
         // Check if input file exists
         if (!fs.existsSync(inputPath)) {
             throw new Error(`Input file not found: ${inputPath}`);
@@ -116,6 +199,7 @@ async function processJob(name, ext) {
         // Create master playlist
         createMasterPlaylist(outputDir, name);
 
+        // Delete input file after encoding
         fs.unlinkSync(inputPath);
 
         // Upload the :name: folder to R2
@@ -126,24 +210,26 @@ async function processJob(name, ext) {
                 ? "application/vnd.apple.mpegurl"
                 : "video/mp2t";
 
-            await r2.send(
-                new PutObjectCommand({
-                    Bucket: "videos",
-                    Key: `${name}/${file}`,
-                    Body: fs.createReadStream(filePath),
-                    ContentType: contentType,
-                })
-            );
-            console.log(`Uploaded ${name}/${file}`);
+            await uploadToR2(filePath, `${name}/${file}`, contentType);
         }
 
         // Delete the output folder
         fs.rmSync(outputDir, { recursive: true });
 
+        // Update Redis status to ready
+        await redis.set(`video:${name}`, JSON.stringify({
+            name,
+            ext,
+            status: 'ready',
+            createdAt: Date.now(),
+        }), { ex: 86400 }); // 24 hours TTL
+
         console.log(`Successfully processed ${name}`);
 
     } catch (error) {
         console.error(`Error processing ${name}:`, error.message);
+        cleanup([inputPath, outputDir]);
+        throw error;
     }
 }
 
@@ -151,6 +237,7 @@ async function main() {
     console.log("Video worker started");
 
     const job = await redis.rpop("video-queue");
+    // const job = { name: 'test', ext: 'mp4', url: 'https://example.com/video.mp4' }
     if (!job || job == null || job == undefined) {
         console.log("No job found in queue");
         return;
@@ -158,13 +245,17 @@ async function main() {
         try {
             console.log(">> Job found in queue:", job);
             const { name, ext } = job;
+            if (!name || !ext) {
+                throw new Error("Invalid job: missing 'name' or 'ext' field");
+            }
             console.log(`>> Processing video: ${name}.${ext}`);
-            await processJob(name, ext);
+            await processJob(job);
             console.log(">> Job processed", job);
         } catch (error) {
-            console.error(">> Error processing job:", error.message);
+            console.error(">> Error processing job:", error);
         }
     }
 }
 
-setInterval(async () => await main(), 60 * 1000);
+main();
+// setInterval(async () => await main(), 60 * 1000);

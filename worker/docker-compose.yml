@@ -2,6 +2,8 @@ services:
   worker:
     build: .
     command: npm run dev
+    env_file:
+      - .env
     develop:
       watch:
         - action: rebuild
