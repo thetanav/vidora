@@ -2,6 +2,8 @@
 
 A full-stack video upload, processing, and streaming platform built with modern web technologies. Upload videos, automatically encode them into multiple resolutions using FFmpeg, and stream them with HLS (HTTP Live Streaming).
 
+<img width="680" height="504" alt="image" src="https://github.com/user-attachments/assets/59ebecdb-ad88-4465-bb4f-36728599cc7c" />
+
 ## Architecture
 
 The platform consists of three main components:
