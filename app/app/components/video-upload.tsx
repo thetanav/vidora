@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,123 +12,197 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { File, Upload } from "lucide-react";
+import { Upload, ArrowLeft, CheckCircle2, X, Loader2 } from "lucide-react";
 import { UploadButton } from "./uploadthing";
 
 import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+interface UploadedFile {
+  name: string;
+  size: number;
+  url: string;
+  key: string;
+}
 
 export default function VideoUpload() {
   const router = useRouter();
-  const [file, setFile] = useState<any | null>(null);
+  const [file, setFile] = useState<UploadedFile | null>(null);
   const [title, setTitle] = useState("");
   const [extension, setExtension] = useState<string | null>(null);
   const [description, setDescription] = useState("");
-  const [id, setId] = useState("");
+  const [id] = useState(() => nanoid(16));
+  const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    setId(nanoid(16));
-  }, []);
+  const handleSubmit = async () => {
+    if (!file) return;
+    setUploading(true);
+    await fetch(`/api/upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        description,
+        id,
+        extension,
+      }),
+    });
+    router.push("/");
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setExtension(null);
+  };
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-10">
-      <div className="mb-8">
-        {id}
-        <h1 className="text-3xl font-bold">Upload Video</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Add a title and description, then upload your video to get started.
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Video Details</CardTitle>
-          <CardDescription>
-            Fill in the information about your video
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Title Field */}
-          <div className="space-y-2">
-            <Label htmlFor="title">
-              Title <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="title"
-              value={title}
-              maxLength={120}
-              placeholder="A great title (required)"
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <div className="text-xs text-muted-foreground">
-              {title.trim().length} / 120 characters
-            </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <Link href="/" className="flex items-center gap-2 text-xl font-bold">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <svg
+              className="w-4 h-4 text-white fill-white"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
           </div>
-
-          {/* Description Field */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              placeholder="Tell viewers what this video is about..."
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          {/* Video File Field */}
-          <div className="space-y-2">
-            <Label htmlFor="file">
-              Video File <span className="text-red-500">*</span>
-            </Label>
-            {file ? (
-              <div>
-                <File className="mr-2 h-4 w-4" />
-                <span>{file.name}</span>
-                <span>{file.size}</span>
-                <span>{file.type}</span>
-              </div>
-            ) : (
-              <UploadButton
-                endpoint="videoUploader"
-                headers={{ "x-video-id": id }}
-                onUploadBegin={(res) => {
-                  console.log("Upload Begin: ", res);
-                }}
-                onClientUploadComplete={(res) => {
-                  // Do something with the response
-                  setFile(res[0]);
-                  setExtension(res[0].name?.split(".").pop()!);
-                }}
-                onUploadError={(error: Error) => {
-                  // Do something with the error.
-                  alert(`ERROR! ${error.message}`);
-                }}
-              />
-            )}
-          </div>
-
-          <Button
-            disabled={!file}
-            size="lg"
-            onClick={() => {
-              fetch(`/api/video/upload`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  title,
-                  description,
-                  id,
-                  extension,
-                }),
-              });
-              router.push("/");
-            }}>
-            <Upload className="h-4 w-4" />
-            Upload
+          <span className="text-gray-900">YUX</span>
+        </Link>
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
           </Button>
-        </CardContent>
-      </Card>
+        </Link>
+      </nav>
+
+      <main className="pt-24 pb-16">
+        <div className="mx-auto w-full max-w-2xl px-4">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Upload Video</h1>
+            <p className="mt-2 text-gray-600">
+              Add a title and description, then upload your video to get started.
+            </p>
+          </div>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle>Video Details</CardTitle>
+              <CardDescription>
+                Fill in the information about your video
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="title">
+                  Title <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="title"
+                  value={title}
+                  maxLength={120}
+                  placeholder="A great title (required)"
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="h-11"
+                />
+                <div className="text-xs text-muted-foreground text-right">
+                  {title.trim().length} / 120 characters
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  placeholder="Tell viewers what this video is about..."
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>
+                  Video File <span className="text-red-500">*</span>
+                </Label>
+                {file ? (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">
+                        {file.name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {(file.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={removeFile}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary hover:bg-gray-50/50 transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <Upload className="w-6 h-6 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      MP4, MOV, or AVI (max 500MB)
+                    </p>
+                    <UploadButton
+                      endpoint="videoUploader"
+                      headers={{ "x-video-id": id }}
+                      onClientUploadComplete={(res) => {
+                        if (res[0]) {
+                          setFile(res[0]);
+                          const ext = res[0].name?.split(".").pop();
+                          if (ext) setExtension(ext);
+                        }
+                      }}
+                      onUploadError={(error: Error) => {
+                        alert(`ERROR! ${error.message}`);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4">
+                <Button
+                  disabled={!file || !title.trim() || uploading}
+                  size="lg"
+                  className="w-full gap-2"
+                  onClick={handleSubmit}
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Upload Video
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }

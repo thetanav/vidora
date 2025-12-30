@@ -116,21 +116,13 @@ export async function downloadUploadThing(url, outPath) {
     console.log(`Downloaded ${stats.size} bytes to ${outPath}`);
 }
 
-// tmp -> name.ext
-//        name/index.m3u8
-//        name/240p.m3u8
-//        name/480p.m3u8
-//        name/720p.m3u8
-//        name/1080p.m3u8
-
-
 async function uploadToR2(filePath, key, contentType, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             const fileStream = fs.createReadStream(filePath);
             await r2.send(
                 new PutObjectCommand({
-                    Bucket: "videos",
+                    Bucket: "yux-videos",
                     Key: key,
                     Body: fileStream,
                     ContentType: contentType,
@@ -216,16 +208,7 @@ async function processJob(job) {
         // Delete the output folder
         fs.rmSync(outputDir, { recursive: true });
 
-        // Update Redis status to ready
-        await redis.set(`video:${name}`, JSON.stringify({
-            name,
-            ext,
-            status: 'ready',
-            createdAt: Date.now(),
-        }), { ex: 86400 }); // 24 hours TTL
-
         console.log(`Successfully processed ${name}`);
-
     } catch (error) {
         console.error(`Error processing ${name}:`, error.message);
         cleanup([inputPath, outputDir]);
@@ -257,5 +240,5 @@ async function main() {
     }
 }
 
-main();
-// setInterval(async () => await main(), 60 * 1000);
+// main();
+setInterval(async () => await main(), 60 * 1000);
