@@ -57,38 +57,40 @@ export default function VideoUpload() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <svg
-              className="w-4 h-4 text-white fill-white"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-          <span className="text-gray-900">YUX</span>
-        </Link>
-        <Link href="/">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Button>
-        </Link>
+    <div className="min-h-screen bg-white">
+      <nav className="border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between max-w-2xl mx-auto">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <svg
+                className="w-4 h-4 text-white fill-white"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+            <span className="text-gray-900">YUX</span>
+          </Link>
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+          </Link>
+        </div>
       </nav>
 
-      <main className="pt-24 pb-16">
+      <main className="py-16">
         <div className="mx-auto w-full max-w-2xl px-4">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Upload Video</h1>
             <p className="mt-2 text-gray-600">
-              Add a title and description, then upload your video to get started.
+              Add a title and description, then upload your video.
             </p>
           </div>
 
-          <Card className="border-0 shadow-lg">
+          <Card>
             <CardHeader>
               <CardTitle>Video Details</CardTitle>
               <CardDescription>

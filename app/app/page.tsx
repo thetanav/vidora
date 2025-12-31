@@ -1,20 +1,16 @@
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ArrowRight, Upload, Play, BarChart3, Zap, Shield } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import db from "@/lib/db";
-import Link from "next/link";
-import { ArrowRight, Upload, Play, BarChart3, Zap, Shield } from "lucide-react";
 
 export default async function Home() {
-  const videos = await db.video.findMany();
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -131,62 +127,6 @@ export default async function Home() {
                 </Button>
               </Link>
             </div>
-            {videos.length === 0 ? (
-              <Card className="border-dashed border-2 border-gray-300">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                    <Upload className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    No videos yet
-                  </h3>
-                  <p className="text-gray-600 text-center mb-6">
-                    Upload your first video to get started
-                  </p>
-                  <Link href="/upload">
-                    <Button className="gap-2">
-                      <Upload className="w-4 h-4" />
-                      Upload Video
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {videos.map((video) => (
-                  <Link key={video.id} href={`/w/${video.id}`}>
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
-                      <div className="relative aspect-video bg-gray-100 overflow-hidden">
-                        <img
-                          src="https://placehold.co/1280x720"
-                          alt={video.title}
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                          <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Play className="w-5 h-5 text-gray-900 fill-gray-900 ml-0.5" />
-                          </div>
-                        </div>
-                        <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 rounded text-xs text-white">
-                          HD
-                        </div>
-                      </div>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base line-clamp-1 group-hover:text-primary transition-colors">
-                          {video.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardFooter className="pt-0">
-                        <p className="text-sm text-muted-foreground">
-                          Created{" "}
-                          {new Date(video.createdAt).toLocaleDateString()}
-                        </p>
-                      </CardFooter>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
           </div>
         </section>
       </main>
