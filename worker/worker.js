@@ -83,7 +83,7 @@ export async function downloadUploadThing(url, outPath) {
 
     // Use curl for more reliable downloads (handles redirects, timeouts better)
     try {
-        execSync(`curl -L --fail --max-time 300 -o "${outPath}" "${url}"`, {
+        execSync(`curl -L --fail -o "${outPath}" "${url}"`, {
             stdio: 'inherit'
         });
     } catch (error) {
@@ -240,5 +240,5 @@ async function main() {
     }
 }
 
-// main();
-setInterval(async () => await main(), 60 * 1000);
+main();
+// setInterval(async () => await main(), 60 * 1000);

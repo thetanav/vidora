@@ -1,6 +1,7 @@
-FROM node
+FROM node:18-alpine
 
-RUN apk add --no-cache ffmpeg
+RUN apk add ffmpeg
+RUN apk add curl ca-certificates
 
 WORKDIR /app
 
