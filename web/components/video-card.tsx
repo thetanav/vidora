@@ -46,20 +46,16 @@ export default function VideoCard({ video }: VideoCardProps) {
         <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
         <div className="absolute top-2 right-2">
-          {video.status === "transcoding" ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/95 text-white text-xs font-medium rounded-lg shadow-lg">
+          {video.status !== "done" && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/95 text-white text-xs font-medium rounded-lg">
               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
               Processing
-            </div>
-          ) : (
-            <div className="px-2.5 py-1.5 bg-green-500/95 text-white text-xs font-medium rounded-lg shadow-lg">
-              Ready
             </div>
           )}
         </div>
 
         <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 text-white text-xs font-medium rounded-md backdrop-blur-sm">
-          00:00
+          ??:??
         </div>
       </div>
 
@@ -70,7 +66,7 @@ export default function VideoCard({ video }: VideoCardProps) {
           </h3>
 
           <p className="text-xs text-muted-foreground mb-2">
-            {new Date(video.createdAt).toLocaleDateString()}
+            {new Date(video.createdAt).toDateString()}
           </p>
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground">

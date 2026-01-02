@@ -32,8 +32,12 @@ export default async function Page({
       </nav>
 
       <main className="pt-24 pb-16 w-full mx-auto max-w-6xl space-y-4">
-        <div className="rounded-xl overflow-hidden bg-black shadow-2xl border border-border">
-          <Player id={id} />
+        <div className="rounded-xl overflow-hidden border w-full h-[60vh] flex items-center justify-center">
+          {video.status === "done" ? (
+            <Player id={id} />
+          ) : (
+            <p>Video not processed yet : (</p>
+          )}
         </div>
 
         <div className="mt-6">

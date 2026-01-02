@@ -46,23 +46,25 @@ app.post("/status/:id", async (c) => {
 app.get("/sw/:id", async (c) => {
   const { id } = c.req.param();
 
-  const video = await db.video.findUnique({
+  // await redis.incr("views:" + id);
+
+  return c.json({
+    url: `${process.env.R2_PUBLIC_URL}/${id}/index.m3u8`,
+  });
+});
+
+app.post("/delete", async (c) => {
+  const { id } = c.req.json();
+
+  await db.video.delete({
     where: {
       id,
     },
   });
 
-  if (!video) {
-    return c.json({
-      message: "Video not found",
-    });
-  }
-
-  if (video.status !== "done") return c.json({ message: "Video not ready" });
-
-  // await redis.incr("views:" + id);
-
-  return c.json({ url: `${process.env.R2_PUBLIC_URL}/${id}/index.m3u8` });
+  return c.json({
+    message: "Video deleted",
+  });
 });
 
 export const GET = handle(app);

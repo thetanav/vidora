@@ -22,7 +22,7 @@ export default function TranscodingItem({ video }: TranscodingItemProps) {
             {video.title}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {new Date(video.createdAt).toLocaleDateString()}
+            {new Date(video.createdAt).toDateString()}
           </p>
         </div>
 
@@ -57,7 +57,9 @@ export default function TranscodingItem({ video }: TranscodingItemProps) {
       <div>
         <div className="flex justify-between items-center mb-2.5">
           <span className="text-sm font-medium text-foreground">Progress</span>
-          <span className="text-sm font-semibold text-primary">Below 100%</span>
+          <span className="text-sm font-semibold text-primary">
+            Somewhere below 100%
+          </span>
         </div>
         <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
           <div
