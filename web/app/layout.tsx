@@ -1,21 +1,15 @@
+import type React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
-import "@uploadthing/react/styles.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "YUX - Video Hosting for Modern Teams",
-  description: "Upload, manage, and share your videos with powerful analytics and seamless playback.",
+  title: "vidora",
+  description: "video saas",
 };
 
 export default function RootLayout({
@@ -24,10 +18,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
         {children}
+        <Analytics />
       </body>
     </html>
   );

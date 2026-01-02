@@ -79,6 +79,7 @@ function createMasterPlaylist(outputDir, name) {
     fs.writeFileSync(masterPath, content); // write to name/index.m3u8
 }
 
+// TODO: fix connection timeout
 export async function downloadUploadThing(url, outPath) {
     console.log(`Fetching from URL: ${url}`);
 

@@ -13,8 +13,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Upload, ArrowLeft, CheckCircle2, X, Loader2 } from "lucide-react";
-import { UploadButton } from "./uploadthing";
-
+import { UploadButton } from "@/components/uploadthing";
 import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -26,7 +25,7 @@ interface UploadedFile {
   key: string;
 }
 
-export default function VideoUpload() {
+export default function Page() {
   const router = useRouter();
   const [file, setFile] = useState<UploadedFile | null>(null);
   const [title, setTitle] = useState("");
@@ -57,22 +56,23 @@ export default function VideoUpload() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="border-b border-gray-200 px-6 py-4">
+    <div className="min-h-screen bg-background">
+      <nav className="border-b border-border bg-card/50 backdrop-blur px-6 py-4">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+          <Link
+            href="/video"
+            className="flex items-center gap-2 text-xl font-bold">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
               <svg
                 className="w-4 h-4 text-white fill-white"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+                xmlns="http://www.w3.org/2000/svg">
                 <path d="M8 5v14l11-7z" />
               </svg>
             </div>
-            <span className="text-gray-900">YUX</span>
+            <span className="text-foreground tracking-tight">StreamFlow</span>
           </Link>
-          <Link href="/">
+          <Link href="/video">
             <Button variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Back
@@ -81,12 +81,14 @@ export default function VideoUpload() {
         </div>
       </nav>
 
-      <main className="py-16">
+      <main className="py-12">
         <div className="mx-auto w-full max-w-2xl px-4">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Upload Video</h1>
-            <p className="mt-2 text-gray-600">
-              Add a title and description, then upload your video.
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">
+              Upload Video
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Add a title and description, then upload your video
             </p>
           </div>
 
@@ -100,7 +102,7 @@ export default function VideoUpload() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">
-                  Title <span className="text-red-500">*</span>
+                  Title <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="title"
@@ -128,15 +130,15 @@ export default function VideoUpload() {
 
               <div className="space-y-2">
                 <Label>
-                  Video File <span className="text-red-500">*</span>
+                  Video File <span className="text-destructive">*</span>
                 </Label>
                 {file ? (
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <div className="flex items-center gap-3 p-4 bg-accent/50 rounded-lg border border-border">
+                    <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
+                      <p className="font-medium text-foreground truncate">
                         {file.name}
                       </p>
                       <p className="text-sm text-muted-foreground">
@@ -147,17 +149,16 @@ export default function VideoUpload() {
                       variant="ghost"
                       size="icon"
                       onClick={removeFile}
-                      className="text-gray-400 hover:text-red-500"
-                    >
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary hover:bg-gray-50/50 transition-colors">
+                  <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 hover:bg-accent/30 transition-all cursor-pointer">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                       <Upload className="w-6 h-6 text-primary" />
                     </div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">
+                    <p className="text-sm font-medium text-foreground mb-1">
                       Click to upload or drag and drop
                     </p>
                     <p className="text-sm text-muted-foreground mb-4">
@@ -186,8 +187,7 @@ export default function VideoUpload() {
                   disabled={!file || !title.trim() || uploading}
                   size="lg"
                   className="w-full gap-2"
-                  onClick={handleSubmit}
-                >
+                  onClick={handleSubmit}>
                   {uploading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
