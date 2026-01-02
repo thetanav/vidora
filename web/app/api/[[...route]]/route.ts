@@ -54,7 +54,7 @@ app.get("/sw/:id", async (c) => {
 });
 
 app.post("/delete", async (c) => {
-  const { id } = c.req.json();
+  const { id } = await c.req.json();
 
   await db.video.delete({
     where: {

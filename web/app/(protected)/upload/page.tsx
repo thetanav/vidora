@@ -47,7 +47,7 @@ export default function Page() {
         extension,
       }),
     });
-    router.push("/");
+    // TODO: show a modal
   };
 
   const removeFile = () => {

@@ -4,7 +4,7 @@ import TranscodingItem from "@/components/transcoding-item";
 export default async function Page() {
   const videos = await db.video.findMany({
     where: {
-      status: "transcoding",
+      status: "pending",
     },
   });
 
