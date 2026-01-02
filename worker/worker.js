@@ -10,6 +10,7 @@ dotenv.config();
 const redis = Redis.fromEnv();
 
 import { S3Client } from "@aws-sdk/client-s3";
+import fetch from "node-fetch";
 
 export const r2 = new S3Client({
     region: "auto",
@@ -128,7 +129,7 @@ async function uploadToR2(filePath, key, contentType, retries = 3) {
                     ContentType: contentType,
                 })
             );
-            console.log(`Uploaded ${key}`);
+            // console.log(`Uploaded ${key}`);
             return;
         } catch (error) {
             console.error(`Upload attempt ${attempt}/${retries} failed for ${key}:`, error.message);
@@ -194,21 +195,25 @@ async function processJob(job) {
         // Delete input file after encoding
         fs.unlinkSync(inputPath);
 
-        // Upload the :name: folder to R2
-        const files = fs.readdirSync(outputDir);
-        for (const file of files) {
-            const filePath = path.join(outputDir, file);
-            const contentType = file.endsWith(".m3u8")
-                ? "application/vnd.apple.mpegurl"
-                : "video/mp2t";
+        try {
 
-            await uploadToR2(filePath, `${name}/${file}`, contentType);
+            // Upload the :name: folder to R2
+            const files = fs.readdirSync(outputDir);
+            for (const file of files) {
+                const filePath = path.join(outputDir, file);
+                const contentType = file.endsWith(".m3u8")
+                    ? "application/vnd.apple.mpegurl"
+                    : "video/mp2t";
+
+                await uploadToR2(filePath, `${name}/${file}`, contentType);
+            }
+            console.log(`Uploaded ${name} to R2`);
+            // Delete the output folder
+            fs.rmSync(outputDir, { recursive: true });
+            console.log(`Successfully processed ${name}`);
+        } catch (error) {
+            console.error(`Error uploading to R2:`, error.message);
         }
-
-        // Delete the output folder
-        fs.rmSync(outputDir, { recursive: true });
-
-        console.log(`Successfully processed ${name}`);
     } catch (error) {
         console.error(`Error processing ${name}:`, error.message);
         cleanup([inputPath, outputDir]);
@@ -232,13 +237,41 @@ async function main() {
                 throw new Error("Invalid job: missing 'name' or 'ext' field");
             }
             console.log(`>> Processing video: ${name}.${ext}`);
+            fetch(`${process.env.BACKEND_URL}/api/status/${name}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    status: "transcoding",
+                }),
+            });
             await processJob(job);
+            fetch(`${process.env.BACKEND_URL}/api/status/${name}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    status: "done",
+                }),
+            });
             console.log(">> Job processed", job);
         } catch (error) {
+            fetch(`${process.env.BACKEND_URL}/api/status/${name}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    status: "retry",
+                }),
+            });
+            await redis.rpush("video-queue", job);
             console.error(">> Error processing job:", error);
         }
     }
 }
 
 main();
-// setInterval(async () => await main(), 60 * 1000);
+setInterval(async () => await main(), 60 * 1000);

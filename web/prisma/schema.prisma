@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Video {
+  id          String   @id
+  title       String
+  description String
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  status      String   @default("pending") // pending, done, transcoding, retry
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
