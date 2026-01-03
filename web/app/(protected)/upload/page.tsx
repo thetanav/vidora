@@ -16,6 +16,8 @@ import { Upload, CheckCircle2, X, Loader2 } from "lucide-react";
 import { UploadButton } from "@/components/uploadthing";
 import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface UploadedFile {
   name: string;
@@ -31,29 +33,35 @@ export default function Page() {
   const [extension, setExtension] = useState<string | null>(null);
   const [description, setDescription] = useState("");
   const [id] = useState(() => nanoid(16));
-  const [uploading, setUploading] = useState(false);
-  const [uploaded, setUploaded] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!file) return;
-    setUploading(true);
-    await fetch(`/api/upload`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        description,
-        id,
-        extension,
-      }),
-    });
-    setUploading(false);
-    setUploaded(true);
-    // Redirect to tasks after a short delay
-    setTimeout(() => {
-      router.push("/tasks");
-    }, 2000);
-  };
+  const {
+    mutate: uploadVideo,
+    isPending,
+    isSuccess,
+  } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description,
+          id,
+          extension,
+        }),
+      });
+      const data = await res.json();
+      if (data.data != "ok") {
+        toast.error("Upload failed");
+        return data;
+      }
+      toast.success("Uploaded successfully");
+      setTimeout(() => {
+        router.push("/home");
+      }, 2000);
+      return data;
+    },
+  });
 
   const removeFile = () => {
     setFile(null);
@@ -161,19 +169,19 @@ export default function Page() {
 
             <div className="pt-4">
               <Button
-                disabled={!file || !title.trim() || uploading || uploaded}
+                disabled={!file || !title.trim() || isPending || isSuccess}
                 size="lg"
                 className="w-full gap-2"
-                onClick={handleSubmit}>
-                {uploaded ? (
+                onClick={() => uploadVideo()}>
+                {isSuccess ? (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
                     Upload Complete! Redirecting...
                   </>
-                ) : uploading ? (
+                ) : isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving...
+                    Uploading...
                   </>
                 ) : (
                   <>

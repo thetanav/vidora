@@ -273,6 +273,9 @@ async function processJob(job: Job) {
 async function main() {
   console.log("Video worker started");
 
+  const empty = await redis.exists("video-queue");
+  if (!empty) return;
+
   const job = await redis.rpop("video-queue");
   const { name, ext }: any = job;
 

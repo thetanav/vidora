@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "@uploadthing/react/styles.css";
+import { Providers } from "@/components/providers";
+import { Toaster } from "@/components/ui/sonner";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -22,7 +24,8 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body
         className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
+        <Providers>{children}</Providers>
+        <Toaster />
         <Analytics />
       </body>
     </html>
