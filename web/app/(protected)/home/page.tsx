@@ -1,26 +1,18 @@
-import { Search } from "lucide-react";
 import db from "@/lib/db";
 import VideoCard from "@/components/video-card";
+import { Search } from "lucide-react";
 
 export default async function Page() {
-  // const [searchQuery, setSearchQuery] = useState("");
-
   const videos = await db.video.findMany();
 
   return (
     <div className="min-h-screen">
-      <div className="bg-card/50 backdrop-blur">
-        <div className="px-6 py-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search videos..."
-              // value={searchQuery}
-              // onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-secondary/50 text-foreground text-sm rounded-lg border border-border placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all"
-            />
-          </div>
+      <div className="px-6 py-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Videos</h1>
+          <p className="text-sm text-muted-foreground">
+            {videos.length} video{videos.length !== 1 ? 's' : ''}
+          </p>
         </div>
       </div>
 
@@ -34,7 +26,7 @@ export default async function Page() {
               No videos found
             </h3>
             <p className="text-sm text-muted-foreground">
-              Try adjusting your search terms
+              Upload your first video to get started
             </p>
           </div>
         ) : (

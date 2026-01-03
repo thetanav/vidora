@@ -12,11 +12,10 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Upload, ArrowLeft, CheckCircle2, X, Loader2 } from "lucide-react";
+import { Upload, CheckCircle2, X, Loader2 } from "lucide-react";
 import { UploadButton } from "@/components/uploadthing";
 import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 interface UploadedFile {
   name: string;
@@ -33,6 +32,7 @@ export default function Page() {
   const [description, setDescription] = useState("");
   const [id] = useState(() => nanoid(16));
   const [uploading, setUploading] = useState(false);
+  const [uploaded, setUploaded] = useState(false);
 
   const handleSubmit = async () => {
     if (!file) return;
@@ -47,7 +47,12 @@ export default function Page() {
         extension,
       }),
     });
-    // TODO: show a modal
+    setUploading(false);
+    setUploaded(true);
+    // Redirect to tasks after a short delay
+    setTimeout(() => {
+      router.push("/tasks");
+    }, 2000);
   };
 
   const removeFile = () => {
@@ -156,11 +161,16 @@ export default function Page() {
 
             <div className="pt-4">
               <Button
-                disabled={!file || !title.trim() || uploading}
+                disabled={!file || !title.trim() || uploading || uploaded}
                 size="lg"
                 className="w-full gap-2"
                 onClick={handleSubmit}>
-                {uploading ? (
+                {uploaded ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Upload Complete! Redirecting...
+                  </>
+                ) : uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Saving...

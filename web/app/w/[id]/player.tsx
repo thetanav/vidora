@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ReactPlayer from "react-player";
+import "@vidstack/react/player/styles/default/theme.css";
+import "@vidstack/react/player/styles/default/layouts/video.css";
+
+import { MediaPlayer, MediaProvider } from "@vidstack/react";
+import {
+  defaultLayoutIcons,
+  DefaultVideoLayout,
+} from "@vidstack/react/player/layouts/default";
 
 export default function Player({ id }: { id: string }) {
   const [r2Url, setR2Url] = useState("");
@@ -21,13 +28,14 @@ export default function Player({ id }: { id: string }) {
 
   if (r2Url !== "") {
     return (
-      <ReactPlayer
-        src={r2Url}
-        playing={false}
-        controls
-        width="100%"
-        height="60vh"
-      />
+      <MediaPlayer title="vidora player" src={r2Url} className="w-full h-full">
+        <MediaProvider />
+        <DefaultVideoLayout
+          thumbnails="https://files.vidstack.io/sprite-fight/thumbnails.vtt"
+          // https://placehold.co/1280x720
+          icons={defaultLayoutIcons}
+        />
+      </MediaPlayer>
     );
   }
 }

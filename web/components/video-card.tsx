@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
 import Link from "next/link";
+import Image from "next/image";
 
 interface VideoCardProps {
   video: {
@@ -39,7 +40,7 @@ export default function VideoCard({ video }: VideoCardProps) {
         <img
           src={"https://placehold.co/1280x720"}
           alt={video.title}
-          className="w-full h-full object-cover"
+          className="object-cover"
           loading="lazy"
         />
 

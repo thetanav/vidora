@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import axios from "axios";
 import { S3Client } from "@aws-sdk/client-s3";
+import { pipeline } from "stream/promises";
 
 dotenv.config();
 
@@ -40,7 +41,7 @@ async function encodeResolution(
   outputDir: string,
   resolution: Resolution
 ) {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const playlistPath = path.join(outputDir, `${resolution.name}.m3u8`);
     const segmentPattern = path.join(outputDir, `${resolution.name}_%03d.ts`);
 
@@ -76,6 +77,14 @@ async function encodeResolution(
     ffmpeg.on("error", (err) => {
       reject(new Error(`ffmpeg exited with error: ${err}`));
     });
+
+    ffmpeg.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`ffmpeg exited with code ${code}`));
+      }
+    });
   });
 }
 
@@ -92,43 +101,50 @@ function createMasterPlaylist(outputDir: string) {
   fs.writeFileSync(masterPath, content); // write to name/index.m3u8
 }
 
-// TODO: fix connection timeout
 export async function downloadUploadThing(url: string, outPath: string) {
   console.log(`Fetching from URL: ${url}`);
 
-  // Use curl for more reliable downloads (handles redirects, timeouts better)
+  const tempPath = `${outPath}.tmp`;
+
+  let response;
   try {
-    execSync(`curl -L --fail -o "${outPath}" "${url}"`, {
-      stdio: "inherit",
+    response = await axios.get(url, {
+      responseType: "stream",
+      timeout: 30_000,
+      maxRedirects: 5,
+      validateStatus: (status) => status >= 200 && status < 300,
+      headers: {
+        "User-Agent": "node-worker",
+        Accept: "*/*",
+      },
     });
-  } catch (error) {
-    throw new Error(`Download failed: ${error}`);
+  } catch (err: any) {
+    throw new Error(`Download request failed: ${err.message}`);
   }
 
-  // Verify the file was downloaded and is valid
-  if (!fs.existsSync(outPath)) {
+  const contentType = response.headers["content-type"] || "";
+  if (contentType.includes("text/html")) {
+    throw new Error("Download failed: received HTML instead of file");
+  }
+
+  try {
+    await pipeline(response.data, fs.createWriteStream(tempPath));
+  } catch (err: any) {
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+    throw new Error(`Stream write failed: ${err.message}`);
+  }
+
+  if (!fs.existsSync(tempPath)) {
     throw new Error("Download failed: file not created");
   }
 
-  const stats = fs.statSync(outPath);
+  const stats = fs.statSync(tempPath);
   if (stats.size === 0) {
-    fs.unlinkSync(outPath);
+    fs.unlinkSync(tempPath);
     throw new Error("Downloaded file is empty");
   }
 
-  // Check if the downloaded file is actually HTML (error page)
-  const buffer = Buffer.alloc(100);
-  const fd = fs.openSync(outPath, "r");
-  fs.readSync(fd, buffer, 0, 100, 0);
-  fs.closeSync(fd);
-  const header = buffer.toString("utf8").toLowerCase();
-
-  if (header.includes("<!doctype html") || header.includes("<html")) {
-    fs.unlinkSync(outPath);
-    throw new Error(
-      "Download failed: received HTML error page instead of video file"
-    );
-  }
+  fs.renameSync(tempPath, outPath);
 
   console.log(`Downloaded ${stats.size} bytes to ${outPath}`);
 }
@@ -293,5 +309,20 @@ async function main() {
   }
 }
 
-main();
-setInterval(async () => await main(), 60 * 1000);
+let running = false;
+
+setInterval(async () => {
+  if (running) {
+    console.log("Previous run still active, skipping tick");
+    return;
+  }
+
+  running = true;
+  try {
+    await main();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    running = false;
+  }
+}, 60_000);

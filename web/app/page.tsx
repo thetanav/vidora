@@ -18,9 +18,9 @@ const featureCards = [
     title: "A dashboard your team loves",
     desc: "Track jobs, status, and playback links without duct tape.",
   },
-  {
-    title: "These all fake so beaware",
-    desc: "Sane styling, accessible components, and clean routes.",
+   {
+    title: "Sane styling, accessible components, and clean routes",
+    desc: "Built with modern React patterns and thoughtful UX.",
   },
 ];
 
@@ -203,7 +203,7 @@ export default function LandingPage() {
         </section>
 
         <footer className="mt-14 flex flex-col gap-3 border-t pt-8 text-xs text-muted-foreground sm:mt-16 sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Muxboard</span>
+          <span>© {new Date().getFullYear()} vidora</span>
           <div className="flex gap-4">
             <Link className="hover:text-foreground" href="/home">
               Dashboard

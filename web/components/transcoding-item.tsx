@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Zap } from "lucide-react";
 
 interface TranscodingItemProps {
@@ -14,6 +15,28 @@ interface TranscodingItemProps {
 }
 
 export default function TranscodingItem({ video }: TranscodingItemProps) {
+  const [percent, setPercent] = useState(0);
+
+  useEffect(() => {
+    const fetchPercent = async () => {
+      try {
+        const res = await fetch(`/api/status/${video.id}`);
+        const data = await res.json();
+        setPercent(data.percent);
+      } catch (error) {
+        console.error("Failed to fetch status:", error);
+      }
+    };
+
+    // Initial fetch
+    fetchPercent();
+
+    // Poll every 2 seconds
+    const interval = setInterval(fetchPercent, 1000);
+
+    return () => clearInterval(interval);
+  }, [video.id]);
+
   return (
     <div className="bg-card border border-border rounded-xl p-6 hover:border-primary/50 transition-all">
       <div className="flex items-start justify-between mb-5">
@@ -57,14 +80,12 @@ export default function TranscodingItem({ video }: TranscodingItemProps) {
       <div>
         <div className="flex justify-between items-center mb-2.5">
           <span className="text-sm font-medium text-foreground">Progress</span>
-          <span className="text-sm font-semibold text-primary">
-            Somewhere below 100%
-          </span>
+          <span className="text-sm font-semibold text-primary">{percent}%</span>
         </div>
         <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
           <div
             className="h-full bg-linear-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
-            style={{ width: `50%` }}
+            style={{ width: `${percent}%` }}
           />
         </div>
       </div>

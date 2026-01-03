@@ -21,25 +21,29 @@ app.post("/upload", async (c) => {
     JSON.stringify({ name: id, ext: extension })
   );
 
-  return c.json({
-    message: "Upload successful",
-  });
+  return c.text("ok");
 });
 
 app.post("/status/:id", async (c) => {
   const { id } = c.req.param();
-  const { status } = await c.req.json();
 
   await db.video.update({
     where: {
       id,
     },
     data: {
-      status,
+      status: "done",
     },
   });
 
-  return c.status(201);
+  return c.text("ok");
+});
+
+app.get("/status/:id", async (c) => {
+  const { id } = c.req.param();
+  const percent = Number(await redis.get(`status:${id}`)) || 0;
+
+  return c.json({ percent });
 });
 
 // generate signed url to watch video
@@ -62,9 +66,7 @@ app.post("/delete", async (c) => {
     },
   });
 
-  return c.json({
-    message: "Video deleted",
-  });
+  return c.text("ok");
 });
 
 export const GET = handle(app);
