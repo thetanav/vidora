@@ -14,4 +14,6 @@ RUN npm install --omit=dev
 # Copy source code
 COPY . .
 
+RUN npm run build
+
 CMD ["npm", "start"]
