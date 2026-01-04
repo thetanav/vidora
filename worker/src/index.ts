@@ -102,7 +102,7 @@ function createMasterPlaylist(outputDir: string) {
 }
 
 export async function downloadUploadThing(url: string, outPath: string) {
-  console.log(`Fetching from URL: ${url}`);
+  console.log("> Downloading video...");
 
   const tempPath = `${outPath}.tmp`;
 
@@ -146,7 +146,7 @@ export async function downloadUploadThing(url: string, outPath: string) {
 
   fs.renameSync(tempPath, outPath);
 
-  console.log(`Downloaded ${stats.size} bytes to ${outPath}`);
+  console.log(`> Downloaded video ${stats.size} bytes to ${outPath}`);
 }
 
 async function uploadToR2(
@@ -182,6 +182,7 @@ async function uploadToR2(
 }
 
 function cleanup(paths: string[]) {
+  console.log("> Cleaning up temporary files...");
   for (const p of paths) {
     try {
       if (fs.existsSync(p)) {
@@ -217,10 +218,10 @@ async function processJob(job: Job) {
     }
 
     // Download the video
-    console.log(`Downloading ${name}.${ext}...`);
     await downloadUploadThing(url, inputPath);
-
-    await redis.set("status:" + name, 10);
+    await redis.set("status:" + name, 10, {
+      ex: 60 * 60 * 24, // one day ttl
+    });
 
     // Check if input file exists
     if (!fs.existsSync(inputPath)) {
@@ -232,18 +233,19 @@ async function processJob(job: Job) {
 
     // Encode all resolutions
     for (const resolution of resolutions) {
-      console.log(`Encoding ${resolution.name}...`);
+      console.log(`> Encoding ${resolution.name}...`);
       await encodeResolution(inputPath, outputDir, resolution);
-      await redis.incrby("status:" + name, 10);
+      await redis.incrby("status:" + name, 15);
     }
 
     // Create master playlist
     createMasterPlaylist(outputDir);
-    await redis.set("status:" + name, 70);
+    await redis.set("status:" + name, 80);
 
     // Delete input file after encoding
     fs.unlinkSync(inputPath);
 
+    console.log("> Uploading to R2...");
     try {
       // Upload the :name: folder to R2
       const files = fs.readdirSync(outputDir);
@@ -255,11 +257,9 @@ async function processJob(job: Job) {
 
         await uploadToR2(filePath, `${name}/${file}`, contentType);
       }
-      console.log(`Uploaded ${name} to R2`);
       // Delete the output folder
       fs.rmSync(outputDir, { recursive: true });
-      await redis.set("status:" + name, 90);
-      console.log(`Successfully processed ${name}`);
+      await redis.set("status:" + name, 100);
     } catch (error) {
       console.error(`Error uploading to R2:`, error);
     }
@@ -271,25 +271,20 @@ async function processJob(job: Job) {
 }
 
 async function main() {
-  console.log("Video worker started");
-
-  const empty = await redis.exists("video-queue");
-  if (!empty) return;
-
   const job = await redis.rpop("video-queue");
   const { name, ext }: any = job;
 
   if (!job || job == null || job == undefined) {
-    console.log("No job found in queue");
     return;
   } else {
     try {
-      console.log(">> Job found in queue:", job);
-      if (!name || !ext) {
-        throw new Error("Invalid job: missing 'name' or 'ext' field");
-      }
-      console.log(`>> Processing video: ${name}.${ext}`);
-      await redis.set("status:" + name, 0);
+      if (!name || !ext) return;
+
+      console.log("> Job found in queue:", job);
+      console.log(`> Processing video: ${name}.${ext}`);
+      await redis.set("status:" + name, 0, {
+        ex: 60 * 60 * 24, // one day ttl
+      });
       await processJob({ name, ext });
       await axios.post(
         `${process.env.BACKEND_URL}/api/status/${name}`,
@@ -303,11 +298,13 @@ async function main() {
           },
         }
       );
-      console.log(">> Job processed", job);
+      console.log("> Job processed", job);
     } catch (error) {
-      await redis.rpush("video-queue", job);
-      await redis.set("status:" + name, 0);
-      console.error(">> Error processing job:", error);
+      await redis.rpush("failed-queue", job);
+      await redis.set("status:" + name, 0, {
+        ex: 60 * 60 * 24, // one day ttl
+      });
+      console.error("> Error processing job:", error);
     }
   }
 }
@@ -316,9 +313,10 @@ let running = false;
 
 setInterval(async () => {
   if (running) {
-    console.log("Previous run still active, skipping tick");
     return;
   }
+  const empty = await redis.exists("video-queue");
+  if (!empty) return;
 
   running = true;
   try {
@@ -328,4 +326,4 @@ setInterval(async () => {
   } finally {
     running = false;
   }
-}, 60_000);
+}, 5_000);
