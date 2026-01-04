@@ -286,18 +286,22 @@ async function main() {
         ex: 60 * 60 * 24, // one day ttl
       });
       await processJob({ name, ext });
-      await axios.post(
-        `${process.env.BACKEND_URL}/api/status/${name}`,
-        {
-          status: "done",
-        },
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+      try {
+        await axios.post(
+          `${process.env.BACKEND_URL}/api/status/${name}`,
+          {
+            status: "done",
           },
-        }
-      );
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      } catch (error) {
+        console.error("> Error posting status:", error);
+      }
       console.log("> Job processed", job);
     } catch (error) {
       await redis.rpush("failed-queue", job);
