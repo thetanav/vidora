@@ -6,13 +6,15 @@ import { handle } from "hono/vercel";
 const app = new Hono().basePath("/api");
 
 app.post("/upload", async (c) => {
-  const { title, description, id, extension } = await c.req.json();
+  const { title, description, id, extension, thumbnailUrl } =
+    await c.req.json();
   await db.video.create({
     data: {
       id,
       title,
       description,
       likes: 0,
+      thumbnail: thumbnailUrl || null,
     },
   });
 

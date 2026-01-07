@@ -2,7 +2,7 @@
   "name": "worker",
   "version": "1.0.0",
   "description": "",
-  "main": "worker.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
@@ -17,11 +17,11 @@
     "@aws-sdk/client-s3": "^3.958.0",
     "@upstash/redis": "^1.35.8",
     "axios": "^1.13.2",
-    "dotenv": "^17.2.3",
-    "ioredis": "^5.8.2",
-    "node-fetch": "^3.3.2"
+    "dotenv": "^17.2.3"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3"
+    "@types/node": "^25.0.3",
+    "tsc": "^2.0.4",
+    "typescript": "^5.9.3"
   }
 }
