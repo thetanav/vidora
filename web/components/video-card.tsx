@@ -20,7 +20,7 @@ interface VideoCardProps {
     likes: number;
     status: string;
     createdAt: Date;
-    thumbnailUrl?: string | null;
+    thumbnail?: string | null;
   };
 }
 
@@ -39,7 +39,7 @@ export default function VideoCard({ video }: VideoCardProps) {
     <Link href={`/w/${video.id}`} className="group cursor-pointer select-none">
       <div className="relative overflow-hidden rounded-xl bg-muted aspect-video mb-3 border border-border/50 group-hover:border-primary/30 transition-all">
         <img
-          src={video.thumbnail}
+          src={video.thumbnail || "https://placehold.co/1280x720"}
           alt={video.title}
           className="object-cover w-full h-full"
           loading="lazy"
