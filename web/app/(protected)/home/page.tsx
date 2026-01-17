@@ -4,7 +4,9 @@ import PageShell from "@/components/page-shell";
 import { Search } from "lucide-react";
 
 export default async function Page() {
-  const videos = await db.video.findMany();
+  const videos = await db.video.findMany({
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <PageShell

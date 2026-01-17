@@ -8,6 +8,7 @@ export default async function Page() {
     where: {
       status: "pending",
     },
+    orderBy: { createdAt: "desc" },
   });
 
   return (

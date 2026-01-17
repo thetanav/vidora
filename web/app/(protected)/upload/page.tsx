@@ -199,16 +199,15 @@ export default function Page() {
           thumbnailUrl,
         }),
       });
-      const data = await res.json();
-      if (data.data != "ok") {
+      if (!res.ok) {
         toast.error("Upload failed");
-        return data;
+        return null;
       }
       toast.success("Uploaded successfully");
       setTimeout(() => {
         router.push("/home");
       }, 2000);
-      return data;
+      return { success: true };
     },
   });
 

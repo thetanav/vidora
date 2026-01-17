@@ -30,11 +30,7 @@ export default function Player({ id }: { id: string }) {
     return (
       <MediaPlayer title="vidora player" src={r2Url} className="w-full h-full">
         <MediaProvider />
-        <DefaultVideoLayout
-          thumbnails="https://files.vidstack.io/sprite-fight/thumbnails.vtt"
-          // https://placehold.co/1280x720
-          icons={defaultLayoutIcons}
-        />
+        <DefaultVideoLayout icons={defaultLayoutIcons} />
       </MediaPlayer>
     );
   }
