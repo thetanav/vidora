@@ -7,10 +7,13 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import axios from "axios";
 import { S3Client } from "@aws-sdk/client-s3";
 import { pipeline } from "stream/promises";
+import { UTApi } from "uploadthing/server";
 
 dotenv.config();
 
 const redis = Redis.fromEnv();
+
+const utapi = new UTApi();
 
 export const r2 = new S3Client({
   region: "auto",
@@ -83,6 +86,35 @@ async function encodeResolution(
         resolve();
       } else {
         reject(new Error(`ffmpeg exited with code ${code}`));
+      }
+    });
+  });
+}
+
+async function generateThumbnail(inputPath: string, outputPath: string) {
+  return new Promise<void>((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", [
+      "-y",
+      "-i",
+      inputPath,
+      "-vf",
+      "select=eq(n\\,0)",
+      "-q:v",
+      "3",
+      "-frames:v",
+      "1",
+      outputPath
+    ]);
+
+    ffmpeg.on("error", (err) => {
+      reject(new Error(`ffmpeg thumbnail error: ${err}`));
+    });
+
+    ffmpeg.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`ffmpeg thumbnail exited with code ${code}`));
       }
     });
   });
@@ -210,6 +242,7 @@ async function processJob(job: Job) {
   const url = `https://odr537djvh.ufs.sh/f/tmp/${name}.${ext}`;
   const inputPath = path.join(tmpDir, `${name}.${ext}`);
   const outputDir = path.join(tmpDir, name);
+  const thumbnailPath = path.join(tmpDir, `${name}_thumb.jpg`);
 
   try {
     // Ensure tmp directory exists
@@ -222,6 +255,11 @@ async function processJob(job: Job) {
     await redis.set("status:" + name, 10, {
       ex: 60 * 60 * 24, // one day ttl
     });
+
+    // Generate thumbnail
+    console.log("> Generating thumbnail...");
+    await generateThumbnail(inputPath, thumbnailPath);
+    await redis.incrby("status:" + name, 5);
 
     // Check if input file exists
     if (!fs.existsSync(inputPath)) {
@@ -257,21 +295,27 @@ async function processJob(job: Job) {
 
         await uploadToR2(filePath, `${name}/${file}`, contentType);
       }
+      // Upload thumbnail
+      await uploadToR2(thumbnailPath, `${name}/image.jpg`, "image/jpeg");
+      // Delete local thumbnail
+      fs.unlinkSync(thumbnailPath);
       // Delete the output folder
       fs.rmSync(outputDir, { recursive: true });
       await redis.set("status:" + name, 100);
+      // Delete original from uploadthing
+      await utapi.deleteFiles(`tmp/${name}.${ext}`);
     } catch (error) {
       console.error(`Error uploading to R2:`, error);
     }
   } catch (error) {
     console.error(`Error processing ${name}:`, error);
-    cleanup([inputPath, outputDir]);
+    cleanup([inputPath, outputDir, thumbnailPath]);
     throw error;
   }
 }
 
 async function main() {
-  const job = await redis.rpop("video-queue");
+  const job = await redis.lindex("video-queue", 0);
   const { name, ext }: any = job;
 
   if (!job || job == null || job == undefined) {
@@ -286,17 +330,13 @@ async function main() {
         ex: 60 * 60 * 24, // one day ttl
       });
       await processJob({ name, ext });
+      // Remove from queue only on success
+      await redis.lpop("video-queue");
       try {
         await axios.post(
           `${process.env.BACKEND_URL}/api/status/${name}`,
           {
-            status: "done",
-          },
-          {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
           }
         );
       } catch (error) {
@@ -304,10 +344,6 @@ async function main() {
       }
       console.log("> Job processed", job);
     } catch (error) {
-      await redis.rpush("failed-queue", job);
-      await redis.set("status:" + name, 0, {
-        ex: 60 * 60 * 24, // one day ttl
-      });
       console.error("> Error processing job:", error);
     }
   }

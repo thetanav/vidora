@@ -37,24 +37,12 @@ export default function VideoCard({ video }: VideoCardProps) {
 
   return (
     <Link href={`/w/${video.id}`} className="group cursor-pointer select-none">
-      <div className="relative overflow-hidden rounded-xl bg-muted aspect-video mb-3 border border-border/50 group-hover:border-primary/30 transition-all">
+      <div className="relative overflow-hidden rounded-xl bg-muted aspect-video mb-3 border border-border/50 transition-all">
         <img
-          src={video.thumbnail || "https://placehold.co/1280x720"}
+          src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${video.id}/image.jpg`}
           alt={video.title}
           className="object-cover w-full h-full"
-          loading="lazy"
         />
-
-        <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-        <div className="absolute top-2 right-2">
-          {video.status !== "done" && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/95 text-white text-xs font-medium rounded-lg">
-              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
-              Processing
-            </div>
-          )}
-        </div>
 
         <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 text-white text-xs font-medium rounded-md backdrop-blur-sm">
           ??:??
@@ -71,16 +59,24 @@ export default function VideoCard({ video }: VideoCardProps) {
             {new Date(video.createdAt).toDateString()}
           </p>
 
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Eye className="w-3.5 h-3.5" />
-              <span>{formatNumber(video.views)} views</span>
+          {video.status !== "done" ? (
+            <div className="flex items-center gap-1.5 text-amber-500/95  text-xs font-medium rounded-lg">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500/95 animate-pulse"></div>
+              Processing
             </div>
-            <div className="flex items-center gap-1.5">
-              <ThumbsUp className="w-3.5 h-3.5" />
-              <span>{formatNumber(video.likes)}</span>
+          ) :
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5" />
+                <span>{formatNumber(video.views)} views</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <ThumbsUp className="w-3.5 h-3.5" />
+                <span>{formatNumber(video.likes)}</span>
+              </div>
             </div>
-          </div>
+          }
+
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -89,10 +85,6 @@ export default function VideoCard({ video }: VideoCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={handleRename} className="cursor-pointer">
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleDownload}
               className="cursor-pointer">

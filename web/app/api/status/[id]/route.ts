@@ -10,16 +10,11 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
 }
 
 export async function POST(_req: Request, context: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
   const { id } = await context.params;
 
   const video = await db.video.findUnique({ where: { id } });
-  if (!video || video.userId !== session.user.id) {
-    return new NextResponse("Unauthorized", { status: 401 });
+  if (!video) {
+    return new NextResponse("no video");
   }
 
   await db.video.update({
