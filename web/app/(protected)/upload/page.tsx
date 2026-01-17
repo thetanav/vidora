@@ -28,6 +28,8 @@ interface UploadedFile {
   key: string;
 }
 
+export const dynamic = "force-dynamic";
+
 export default function Page() {
   const router = useRouter();
   const [file, setFile] = useState<UploadedFile | null>(null);
