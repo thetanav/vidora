@@ -23,8 +23,14 @@ export default async function Page({
       id,
     },
   });
-
   if (!video) notFound();
+
+  const user = await db.user.findUnique({
+    where: {
+      id: video!.userId,
+    },
+  });
+
 
   return (
     <div className="min-h-screen bg-background w-full">
@@ -66,17 +72,17 @@ export default async function Page({
 
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4">
             <div className="flex items-center gap-3">
-              <Image
-                src="/per1.png"
-                alt="Tanav Poswal"
+              <img
+                src={user?.image!}
+                alt={user?.name!}
                 width={48}
                 height={48}
                 className="rounded-full border-2 border-border"
               />
               <div>
-                <h3 className="font-semibold text-foreground">Tanav Poswal</h3>
+                <h3 className="font-semibold text-foreground">{user?.name!}</h3>
                 <p className="text-sm text-muted-foreground">
-                  12.3M subscribers
+                  x subscribers
                 </p>
               </div>
             </div>

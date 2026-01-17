@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun --bun next dev",
-    "build": "bun genrate && bun --bun next build",
+    "build": "bun generate && bun --bun next build",
     "start": "next start",
     "lint": "eslint .",
     "migrate": "bunx --bun prisma migrate dev",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@auth/core": "^0.41.1",
+    "@auth/prisma-adapter": "^2.11.1",
     "@hono/auth-js": "^1.1.0",
     "@hookform/resolvers": "^3.10.0",
     "@prisma/adapter-pg": "^7.2.0",
