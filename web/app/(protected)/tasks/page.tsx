@@ -1,5 +1,7 @@
 import db from "@/lib/db";
 import TranscodingItem from "@/components/transcoding-item";
+import PageShell from "@/components/page-shell";
+import { CheckCircle2 } from "lucide-react";
 
 export default async function Page() {
   const videos = await db.video.findMany({
@@ -9,50 +11,24 @@ export default async function Page() {
   });
 
   return (
-    <div className="min-h-screen">
-      <div className="border-b border-border bg-card/50 backdrop-blur">
-        <div className="px-6 py-8">
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-            Transcoding Status
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Monitor the real-time progress of your video encoding
+    <PageShell title="Transcoding" description="Status of pending videos">
+      {videos.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-10 text-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10">
+            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+          </div>
+          <h3 className="text-sm font-semibold">No active transcoding</h3>
+          <p className="text-sm text-muted-foreground">
+            All videos have been processed successfully.
           </p>
         </div>
-      </div>
-
-      <div className="px-6 py-8">
-        {videos.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
-              <svg
-                className="w-8 h-8 text-green-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">
-              No Active Transcoding
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              All videos have been processed successfully
-            </p>
-          </div>
-        ) : (
-          <div className="max-w-3xl space-y-4">
-            {videos.map((video) => (
-              <TranscodingItem key={video.id} video={video} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+      ) : (
+        <div className="mx-auto max-w-3xl space-y-4">
+          {videos.map((video) => (
+            <TranscodingItem key={video.id} video={video} />
+          ))}
+        </div>
+      )}
+    </PageShell>
   );
 }

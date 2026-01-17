@@ -1,7 +1,8 @@
 "use client";
 
-import { auth, signIn, signOut } from "@/auth"
-import { Button } from "./ui/button"
+import { signIn, signOut, useSession } from "next-auth/react";
+
+import { Button } from "./ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,36 +12,53 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-export default async function AuthButton() {
-  const session = await auth()
+export default function AuthButton() {
+  const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return (
+      <Button size="icon" variant="ghost" disabled>
+        <span className="sr-only">Loading</span>
+      </Button>
+    );
+  }
 
   if (session) {
-    return <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size={"icon"} variant={"ghost"} className="cursor-pointer">
-          <img src={session.user?.image!} className="w-8 h-8 rounded-full" alt="User avatar" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-        <DropdownMenuGroup>
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Billing</DropdownMenuItem>
-          <DropdownMenuItem className="text-destructive" asChild>
-            <button
-              type="submit"
-              onClick={() => signOut()}
-              className="w-full px-px py-px text-start cursor-pointer"
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="w-full cursor-pointer mx-2 border rounded-xl py-2 px-3 flex items-center justify-between overflow-clip hover:bg-accent outline-none select-none">
+            <div className="flex flex-col items-start">
+              <h2>{session.user?.name!}</h2>
+              <h2 className="text-muted-foreground text-sm text-ellipsis">{session.user?.email!}</h2>
+            </div>
+            <img
+              src={session.user?.image ?? ""}
+              className="w-9 h-9 rounded-full"
+              alt="User avatar"
+            />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end">
+          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>Billing</DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => signOut({ callbackUrl: "/" })}
             >
               Logout
-            </button>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   }
 
   return (
-    <Button onClick={() => signIn("google", { redirectTo: "/home" })} type="submit">Signin with Google</Button>
-  )
+    <Button onClick={() => signIn("google", { callbackUrl: "/home" })}>
+      Signin with Google
+    </Button>
+  );
 } 

@@ -19,7 +19,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-sidebar border-r border-border flex flex-col">
+    <aside className="w-76 bg-sidebar border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
         <Link href="/home" className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-primary/20">
@@ -73,7 +73,7 @@ export default function Sidebar() {
         </Link>
       </nav>
 
-      <div>
+      <div className="py-3 w-full flex items-center justify-center">
         <AuthButton />
       </div>
     </aside>
