@@ -11,6 +11,7 @@ model Video {
   id          String   @id
   title       String
   description String
+  extension   String
   views       Int      @default(0)
   likes       Int      @default(0)
   thumbnail   String?  @default("https://placehold.co/1280x720")

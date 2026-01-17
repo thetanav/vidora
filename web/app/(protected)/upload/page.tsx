@@ -116,6 +116,8 @@ export default function Page() {
     try {
       const video = document.createElement("video");
       video.preload = "metadata";
+      video.muted = true;
+      video.playsInline = true;
 
       const videoUrl = URL.createObjectURL(videoFile);
       video.src = videoUrl;
@@ -125,10 +127,19 @@ export default function Page() {
         video.onerror = () => reject(new Error("Failed to load video metadata"));
       });
 
-      // Get random time from first 3 minutes (or video duration if shorter)
-      const maxTime = Math.min(video.duration, 180); // 180 seconds = 3 minutes
-      const randomTime = Math.random() * maxTime;
+      // iOS/Safari sometimes won't render frames until playback starts.
+      try {
+        await video.play();
+        video.pause();
+      } catch {
+        // Ignore autoplay restrictions; seek may still work.
+      }
 
+      // Get random time from first 3 minutes (or video duration if shorter)
+      const maxTime = Math.min(video.duration || 0, 180); // 180 seconds = 3 minutes
+      const randomTime = maxTime > 0 ? Math.random() * maxTime : 0;
+
+      // Some browsers need a short delay before seeking.
       video.currentTime = randomTime;
 
       await new Promise<void>((resolve, reject) => {
@@ -178,6 +189,7 @@ export default function Page() {
     mutationFn: async () => {
       const res = await fetch(`/api/upload`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
@@ -319,14 +331,18 @@ export default function Page() {
                       const ext = res[0].name?.split(".").pop();
                       if (ext) setExtension(ext);
 
-                      // Fetch the uploaded video and capture thumbnail
+                      // Capture thumbnail directly from the selected local file (no `ufsUrl` fetch).
                       try {
-                        const response = await fetch(res[0].ufsUrl);
-                        const blob = await response.blob();
-                        const videoFile = new File([blob], res[0].name, { type: blob.type });
-                        captureRandomFrame(videoFile);
+                        const input = document.querySelector(
+                          'input[type="file"][data-ut-element="input"]'
+                        ) as HTMLInputElement | null;
+
+                        const localFile = input?.files?.[0];
+                        if (localFile) {
+                          await captureRandomFrame(localFile);
+                        }
                       } catch (error) {
-                        console.error("Failed to fetch video for thumbnail:", error);
+                        console.error("Failed to capture thumbnail from local file:", error);
                       }
                     }
                   }}
