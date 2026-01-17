@@ -1,6 +1,7 @@
 import db from "@/lib/db";
 import VideoCard from "@/components/video-card";
 import { Search } from "lucide-react";
+import SignIn from "@/components/signin";
 
 export default async function Page() {
   const videos = await db.video.findMany();
@@ -11,8 +12,11 @@ export default async function Page() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Videos</h1>
           <p className="text-sm text-muted-foreground">
-            {videos.length} video{videos.length !== 1 ? 's' : ''}
+            {videos.length} video{videos.length > 1 ? 's' : ''}
           </p>
+        </div>
+        <div>
+          <SignIn />
         </div>
       </div>
 
