@@ -72,7 +72,7 @@ export default async function Page({
 
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4">
             <div className="flex items-center gap-3">
-              <img
+              <Image
                 src={user?.image!}
                 alt={user?.name!}
                 width={48}

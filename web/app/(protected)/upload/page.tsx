@@ -298,6 +298,8 @@ export default function Page() {
                           src={thumbnailPreview}
                           alt="Video thumbnail"
                           className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : null}
                     </div>

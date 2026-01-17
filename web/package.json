@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "bun --bun next dev",
-    "build": "bun generate && next build",
+    "build": "bun generate && next build --webpack",
+    "build:node": "prisma generate && next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "migrate": "bunx --bun prisma migrate dev",

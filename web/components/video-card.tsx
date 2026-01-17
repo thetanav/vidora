@@ -38,10 +38,11 @@ export default function VideoCard({ video }: VideoCardProps) {
   return (
     <Link href={`/w/${video.id}`} className="group cursor-pointer select-none">
       <div className="relative overflow-hidden rounded-xl bg-muted aspect-video mb-3 border border-border/50 transition-all">
-        <img
+        <Image
           src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${video.id}/image.jpg`}
           alt={video.title}
-          className="object-cover w-full h-full"
+          fill
+          className="object-cover"
         />
 
         <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 text-white text-xs font-medium rounded-md backdrop-blur-sm">
