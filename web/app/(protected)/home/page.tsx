@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import db from "@/lib/db";
 import VideoCard from "@/components/video-card";
 import PageShell from "@/components/page-shell";
@@ -6,7 +7,15 @@ import { Search } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null;
+  }
+
   const videos = await db.video.findMany({
+    where: {
+      userId: session.user.id,
+    },
     orderBy: { createdAt: "desc" },
   });
 

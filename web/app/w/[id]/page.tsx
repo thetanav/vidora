@@ -1,14 +1,12 @@
 import Player from "./player";
+import WatchClient from "./watch-client";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import db from "@/lib/db";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   ThumbsUp,
-  ThumbsDown,
-  Share2,
   Activity,
 } from "lucide-react";
 
@@ -30,7 +28,6 @@ export default async function Page({
       id: video!.userId,
     },
   });
-
 
   return (
     <div className="min-h-screen bg-background w-full">
@@ -72,17 +69,21 @@ export default async function Page({
 
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4">
             <div className="flex items-center gap-3">
-              <Image
-                src={user?.image!}
-                alt={user?.name!}
-                width={48}
-                height={48}
-                className="rounded-full border-2 border-border"
-              />
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={user.name || "Uploader avatar"}
+                  className="h-12 w-12 rounded-full border-2 border-border object-cover"
+                />
+              ) : (
+                <div className="grid h-12 w-12 place-items-center rounded-full border-2 border-border bg-muted text-sm font-semibold uppercase">
+                  {user?.name?.slice(0, 1) || "V"}
+                </div>
+              )}
               <div>
-                <h3 className="font-semibold text-foreground">{user?.name!}</h3>
+                <h3 className="font-semibold text-foreground">{user?.name || "Unknown creator"}</h3>
                 <p className="text-sm text-muted-foreground">
-                  x subscribers
+                  Uploaded with Vidora
                 </p>
               </div>
             </div>
@@ -92,13 +93,7 @@ export default async function Page({
                 <ThumbsUp className="w-4 h-4" />
                 {video.likes || 0}
               </Button>
-              <Button size="icon" variant="outline">
-                <ThumbsDown className="w-4 h-4" />
-              </Button>
-              <Button variant="outline">
-                <Share2 className="w-4 h-4" />
-                Share
-              </Button>
+              <WatchClient videoId={id} isReady={video.status === "done"} />
             </div>
           </div>
 

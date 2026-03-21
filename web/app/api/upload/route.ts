@@ -8,7 +8,7 @@ const uploadSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().max(10_000).optional().default(""),
   id: z.string().trim().min(1),
-  extension: z.string().trim().min(1).max(10),
+  extension: z.enum(["mp4", "mov", "avi", "mkv", "webm"]),
   thumbnailUrl: z.string().url().optional().nullable(),
 });
 
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     },
   });
 
-  await redis.lpush("video-queue", JSON.stringify({ name: id, ext: extension }));
+  await redis.rpush("video-queue", JSON.stringify({ name: id, ext: extension, attempts: 0 }));
 
   return new NextResponse("ok");
 }

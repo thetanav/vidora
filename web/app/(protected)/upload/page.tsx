@@ -331,7 +331,7 @@ export default function Page() {
                   onClientUploadComplete={async (res) => {
                     if (res[0]) {
                       setFile(res[0]);
-                      const ext = res[0].name?.split(".").pop();
+                      const ext = res[0].name?.split(".").pop()?.toLowerCase();
                       if (ext) setExtension(ext);
 
                       // Capture thumbnail directly from the selected local file (no `ufsUrl` fetch).

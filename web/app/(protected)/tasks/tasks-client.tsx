@@ -18,7 +18,7 @@ type Video = {
 type ClientVideo = Omit<Video, "createdAt"> & { createdAt: Date };
 
 async function fetchPendingVideos(): Promise<Video[]> {
-  const res = await fetch("/api/videos?status=pending", {
+  const res = await fetch("/api/videos?status=pending,processing,failed", {
     cache: "no-store",
     headers: {
       accept: "application/json",
@@ -34,7 +34,7 @@ async function fetchPendingVideos(): Promise<Video[]> {
 
 export default function TasksClient() {
   const { data: videos = [] } = useQuery({
-    queryKey: ["videos", "pending"],
+    queryKey: ["videos", "jobs"],
     queryFn: fetchPendingVideos,
     refetchInterval: 5000,
     staleTime: 2000,
@@ -48,7 +48,7 @@ export default function TasksClient() {
         </div>
         <h3 className="text-sm font-semibold">No active transcoding</h3>
         <p className="text-sm text-muted-foreground">
-          All videos have been processed successfully.
+          No pending, processing, or failed jobs right now.
         </p>
       </div>
     );

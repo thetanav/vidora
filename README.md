@@ -9,6 +9,8 @@ A modern video upload and streaming platform with automatic transcoding to HLS.
 - **Adaptive Streaming**: Direct HLS streaming from Cloudflare R2
 - **Real-time Status**: Monitor transcoding progress
 - **Modern UI**: Next.js 16 + React 19 + Tailwind CSS
+- **User-Scoped Library**: Dashboard and jobs are filtered per signed-in user
+- **Retry-Aware Worker**: Failed jobs are retried before being marked failed
 
 ## Architecture
 
@@ -44,7 +46,12 @@ DATABASE_URL="postgresql://..."
 UPSTASH_REDIS_REST_URL="..."
 UPSTASH_REDIS_REST_TOKEN="..."
 R2_PUBLIC_URL="..."
+NEXT_PUBLIC_R2_PUBLIC_URL="..."
 UPLOADTHING_TOKEN="..."
+AUTH_GOOGLE_ID="..."
+AUTH_GOOGLE_SECRET="..."
+AUTH_SECRET="..."
+WORKER_SHARED_SECRET=""
 ```
 
 **`worker/.env`:**
@@ -55,7 +62,10 @@ R2_SECRET_ACCESS_KEY="..."
 UPSTASH_REDIS_REST_URL="..."
 UPSTASH_REDIS_REST_TOKEN="..."
 BACKEND_URL="http://localhost:3000"
+WORKER_SHARED_SECRET=""
 ```
+
+If `WORKER_SHARED_SECRET` is set, use the same value in both services.
 
 ### 4. Start Services
 ```bash
@@ -64,6 +74,13 @@ cd web && npm run dev
 
 # Terminal 2: Worker
 cd worker && npm start
+```
+
+Or from the repo root:
+
+```bash
+npm run dev:web
+npm run dev:worker
 ```
 
 ## Usage
@@ -76,9 +93,13 @@ cd worker && npm start
 ## API Endpoints
 
 - `POST /api/upload` - Create video record
-- `POST /api/status/:id` - Update status
+- `POST /api/status/:id` - Worker status callback
 - `GET /api/sw/:id` - Get streaming URL
-- `POST /api/delete` - Delete video
+- `GET /api/videos` - List signed-in user's videos
+- `PATCH /api/videos/:id` - Update signed-in user's video metadata
+- `DELETE /api/videos/:id` - Delete signed-in user's video
+- `POST /api/videos/:id/view` - Increment public view count
+- `GET /api/videos/:id/share` - Return watch and stream URLs
 
 ## Requirements
 

@@ -1,14 +1,35 @@
 import { NextResponse } from "next/server";
 
+import { auth } from "@/auth";
 import db from "@/lib/db";
 
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status");
+  const session = await auth();
+  if (!session?.user?.id) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
 
-  const where = status ? { status } : undefined;
+  const { searchParams } = new URL(req.url);
+  const statusParam = searchParams.get("status");
+  const statuses = statusParam
+    ? statusParam
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+    : [];
+
+  const where = {
+    userId: session.user.id,
+    ...(statuses.length > 0
+      ? {
+          status: {
+            in: statuses,
+          },
+        }
+      : {}),
+  };
 
   const videos = await db.video.findMany({
     where,

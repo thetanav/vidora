@@ -1,4 +1,4 @@
-import { spawn, execSync } from "child_process";
+import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import { Redis } from "@upstash/redis";
@@ -234,6 +234,74 @@ function cleanup(paths: string[]) {
 interface Job {
   name: string;
   ext: string;
+  attempts?: number;
+}
+
+const STATUS_TTL_SECONDS = 60 * 60 * 24;
+const MAX_ATTEMPTS = 3;
+
+async function reportStatus(jobId: string, status: JobStatus, progress?: number) {
+  const nextProgress = progress ?? (
+    status === "done" ? 100 : status === "pending" ? 0 : undefined
+  );
+
+  if (nextProgress !== undefined) {
+    await redis.set(`status:${jobId}`, nextProgress, {
+      ex: STATUS_TTL_SECONDS,
+    });
+  }
+
+  try {
+    const headers = process.env.WORKER_SHARED_SECRET
+      ? {
+          "x-worker-secret": process.env.WORKER_SHARED_SECRET,
+        }
+      : undefined;
+
+    await axios.post(
+      `${process.env.BACKEND_URL}/api/status/${jobId}`,
+      {
+        status,
+        progress: nextProgress,
+      },
+      headers ? { headers } : undefined
+    );
+  } catch (error) {
+    console.error("> Error posting status:", error);
+  }
+}
+
+type JobStatus = "pending" | "processing" | "done" | "failed";
+
+function parseJob(rawJob: unknown): Job | null {
+  if (!rawJob) {
+    return null;
+  }
+
+  try {
+    const parsed = typeof rawJob === "string" ? JSON.parse(rawJob) : rawJob;
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "name" in parsed &&
+      "ext" in parsed &&
+      typeof parsed.name === "string" &&
+      typeof parsed.ext === "string"
+    ) {
+      return {
+        name: parsed.name,
+        ext: parsed.ext,
+        attempts:
+          "attempts" in parsed && typeof parsed.attempts === "number"
+            ? parsed.attempts
+            : 0,
+      };
+    }
+  } catch (error) {
+    console.error("> Failed to parse job payload:", error);
+  }
+
+  return null;
 }
 
 async function processJob(job: Job) {
@@ -252,14 +320,12 @@ async function processJob(job: Job) {
 
     // Download the video
     await downloadUploadThing(url, inputPath);
-    await redis.set("status:" + name, 10, {
-      ex: 60 * 60 * 24, // one day ttl
-    });
+    await reportStatus(name, "processing", 10);
 
     // Generate thumbnail
     console.log("> Generating thumbnail...");
     await generateThumbnail(inputPath, thumbnailPath);
-    await redis.incrby("status:" + name, 5);
+    await reportStatus(name, "processing", 15);
 
     // Check if input file exists
     if (!fs.existsSync(inputPath)) {
@@ -273,12 +339,16 @@ async function processJob(job: Job) {
     for (const resolution of resolutions) {
       console.log(`> Encoding ${resolution.name}...`);
       await encodeResolution(inputPath, outputDir, resolution);
-      await redis.incrby("status:" + name, 15);
+      const nextProgress = Math.min(
+        75,
+        15 + resolutions.findIndex((item) => item.name === resolution.name) * 15 + 15
+      );
+      await reportStatus(name, "processing", nextProgress);
     }
 
     // Create master playlist
     createMasterPlaylist(outputDir);
-    await redis.set("status:" + name, 80);
+    await reportStatus(name, "processing", 80);
 
     // Delete input file after encoding
     fs.unlinkSync(inputPath);
@@ -301,11 +371,12 @@ async function processJob(job: Job) {
       fs.unlinkSync(thumbnailPath);
       // Delete the output folder
       fs.rmSync(outputDir, { recursive: true });
-      await redis.set("status:" + name, 100);
+      await reportStatus(name, "done", 100);
       // Delete original from uploadthing
       await utapi.deleteFiles(`tmp/${name}.${ext}`);
     } catch (error) {
       console.error(`Error uploading to R2:`, error);
+      throw error;
     }
   } catch (error) {
     console.error(`Error processing ${name}:`, error);
@@ -314,38 +385,50 @@ async function processJob(job: Job) {
   }
 }
 
-async function main() {
-  const job = await redis.lindex("video-queue", 0);
-  const { name, ext }: any = job;
-
-  if (!job || job == null || job == undefined) {
+async function claimNextJob() {
+  const rawJob = await redis.lpop("video-queue");
+  const job = parseJob(rawJob);
+  if (!job) {
     return;
-  } else {
-    try {
-      if (!name || !ext) return;
+  }
 
-      console.log("> Job found in queue:", job);
-      console.log(`> Processing video: ${name}.${ext}`);
-      await redis.set("status:" + name, 0, {
-        ex: 60 * 60 * 24, // one day ttl
-      });
-      await processJob({ name, ext });
-      // Remove from queue only on success
-      await redis.lpop("video-queue");
-      try {
-        await axios.post(
-          `${process.env.BACKEND_URL}/api/status/${name}`,
-          {
-            method: "POST",
-          }
-        );
-      } catch (error) {
-        console.error("> Error posting status:", error);
-      }
-      console.log("> Job processed", job);
-    } catch (error) {
-      console.error("> Error processing job:", error);
+  return job;
+}
+
+async function main() {
+  const job = await claimNextJob();
+  if (!job) {
+    return;
+  }
+
+  const { name, ext, attempts = 0 } = job;
+
+  try {
+    if (!name || !ext) {
+      return;
     }
+
+    console.log("> Job found in queue:", job);
+    console.log(`> Processing video: ${name}.${ext}`);
+    await reportStatus(name, "processing", 0);
+    await processJob({ name, ext, attempts });
+    console.log("> Job processed", job);
+  } catch (error) {
+    console.error("> Error processing job:", error);
+
+    if (attempts + 1 < MAX_ATTEMPTS) {
+      const nextAttemptJob = JSON.stringify({
+        name,
+        ext,
+        attempts: attempts + 1,
+      });
+      await redis.rpush("video-queue", nextAttemptJob);
+      await reportStatus(name, "pending", 0);
+      console.log(`> Requeued ${name}.${ext} for retry ${attempts + 1}/${MAX_ATTEMPTS - 1}`);
+      return;
+    }
+
+    await reportStatus(name, "failed");
   }
 }
 
@@ -355,8 +438,8 @@ setInterval(async () => {
   if (running) {
     return;
   }
-  const empty = await redis.exists("video-queue");
-  if (!empty) return;
+  const hasJobs = await redis.exists("video-queue");
+  if (!hasJobs) return;
 
   running = true;
   try {

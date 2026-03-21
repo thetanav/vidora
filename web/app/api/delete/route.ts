@@ -14,13 +14,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
 
-  const video = await db.video.findUnique({ where: { id } });
-  if (!video || video.userId !== session.user.id) {
-    return new NextResponse("Unauthorized", { status: 401 });
+  const video = await db.video.findFirst({
+    where: {
+      id,
+      userId: session.user.id,
+    },
+  });
+
+  if (!video) {
+    return new NextResponse("Not found", { status: 404 });
   }
 
   await db.video.delete({ where: { id } });
-  await redis.del("status:" + id);
+  await redis.del(`status:${id}`);
 
-  return new NextResponse("ok");
+  return NextResponse.json({ ok: true });
 }

@@ -80,12 +80,18 @@ export default function TranscodingItem({ video }: TranscodingItemProps) {
       <div>
         <div className="flex justify-between items-center mb-2.5">
           <span className="text-sm font-medium text-foreground">Progress</span>
-          <span className="text-sm font-semibold text-primary">{percent}%</span>
+          <span className="text-sm font-semibold text-primary">
+            {video.status === "failed" ? "Failed" : `${percent}%`}
+          </span>
         </div>
         <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
           <div
-            className="h-full bg-linear-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
-            style={{ width: `${percent}%` }}
+            className={`h-full rounded-full transition-all duration-500 ${
+              video.status === "failed"
+                ? "bg-destructive"
+                : "bg-linear-to-r from-primary to-primary/80"
+            }`}
+            style={{ width: `${video.status === "failed" ? 100 : percent}%` }}
           />
         </div>
       </div>

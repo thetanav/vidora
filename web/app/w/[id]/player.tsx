@@ -12,6 +12,7 @@ import {
 
 export default function Player({ id }: { id: string }) {
   const [r2Url, setR2Url] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -21,12 +22,14 @@ export default function Player({ id }: { id: string }) {
         setR2Url(data.url);
       } catch (error) {
         console.error("Failed to fetch video URL:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
   }, [id]);
 
-  if (r2Url !== "") {
+  if (r2Url) {
     return (
       <MediaPlayer title="vidora player" src={r2Url} className="w-full h-full">
         <MediaProvider />
@@ -34,4 +37,10 @@ export default function Player({ id }: { id: string }) {
       </MediaPlayer>
     );
   }
+
+  if (isLoading) {
+    return <div className="grid h-full min-h-[40vh] place-items-center text-sm text-muted-foreground">Loading player...</div>;
+  }
+
+  return <div className="grid h-full min-h-[40vh] place-items-center text-sm text-muted-foreground">Playback is not available yet.</div>;
 }
