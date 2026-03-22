@@ -11,69 +11,53 @@ import {
 } from "lucide-react";
 import AuthButton from "./signin";
 
+const navItems = [
+  { path: "/home", label: "Videos", icon: LayoutDashboard },
+  { path: "/tasks", label: "Tasks", icon: Activity },
+  { path: "/upload", label: "Upload", icon: Upload },
+  { path: "/feedback", label: "Feedback", icon: MessageSquare },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const isActive = (path: string) => {
-    return pathname === path || (pathname.startsWith(path) && path !== "/");
-  };
+  const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
 
   return (
-    <aside className="w-76 bg-sidebar border-r border-border flex flex-col">
-      <div className="p-6 border-b border-border">
-        <Link href="/home" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-primary/20">
-            <Play className="w-4 h-4 text-white fill-white" />
+    <aside className="w-64 flex flex-col border-r border-border/50 bg-card/30">
+      <div className="p-5">
+        <Link href="/home" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-violet-500/20 transition-shadow">
+            <Play className="w-3.5 h-3.5 text-white fill-white" />
           </div>
-          <span className="font-bold text-foreground text-lg tracking-tight">
+          <span className="font-semibold text-foreground text-sm tracking-tight">
             vidora
           </span>
         </Link>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
-        <Link
-          href="/home"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive("/home")
-            ? "bg-primary text-primary-foreground font-medium"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-            }`}>
-          <LayoutDashboard className="w-4 h-4" />
-          <span className="text-sm">Videos</span>
-        </Link>
-
-        <Link
-          href="/tasks"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive("/tasks")
-            ? "bg-primary text-primary-foreground font-medium"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-            }`}>
-          <Activity className="w-4 h-4" />
-          <span className="text-sm">Tasks</span>
-        </Link>
-
-        <Link
-          href="/upload"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive("/upload")
-            ? "bg-primary text-primary-foreground font-medium"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-            }`}>
-          <Upload className="w-4 h-4" />
-          <span className="text-sm">Upload</span>
-        </Link>
-
-        <Link
-          href="/feedback"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive("/feedback")
-            ? "bg-primary text-primary-foreground font-medium"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-            }`}>
-          <MessageSquare className="w-4 h-4" />
-          <span className="text-sm">Feedback</span>
-        </Link>
+      <nav className="flex-1 px-3 py-2 space-y-0.5">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.path}
+              href={item.path}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                active
+                  ? "bg-foreground/5 text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${active ? "text-foreground" : "text-muted-foreground/70"}`} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
-      <div className="py-3 w-full flex items-center justify-center">
+      <div className="p-3 border-t border-border/50">
         <AuthButton />
       </div>
     </aside>

@@ -15,14 +15,14 @@ export default function PageShell({
 }: PageShellProps) {
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b bg-sidebar px-2 py-2">
-        <div className="flex h-12 items-center justify-between px-6">
+      <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex h-14 items-center justify-between px-6">
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold tracking-tight">
+            <h1 className="text-sm font-medium text-foreground">
               {title}
             </h1>
             {description ? (
-              <p className="truncate text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {description}
               </p>
             ) : null}
@@ -31,7 +31,7 @@ export default function PageShell({
         </div>
       </header>
 
-      <main className="flex-1 px-6 py-6">{children}</main>
+      <main className="flex-1 p-6">{children}</main>
     </div>
   );
 }
