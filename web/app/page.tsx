@@ -11,11 +11,6 @@ const features = [
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen">
-      {/* Background */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-0 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
-      </div>
-
       <div className="mx-auto max-w-5xl px-6 py-16">
         {/* Header */}
         <header className="flex items-center justify-between">
@@ -38,7 +33,8 @@ export default function LandingPage() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-            Upload, transcode, and share your videos with a clean, fast dashboard.
+            Upload, transcode, and share your videos with a clean, fast
+            dashboard.
           </p>
 
           <div className="mt-8 flex items-center justify-center gap-3">
@@ -48,7 +44,7 @@ export default function LandingPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="ghost" size="lg">
+            <Button asChild variant="outline" size="lg">
               <Link href="/home">View dashboard</Link>
             </Button>
           </div>
@@ -62,7 +58,9 @@ export default function LandingPage() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                   <Play className="h-5 w-5 text-muted-foreground fill-muted-foreground" />
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground">Video preview</p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Video preview
+                </p>
               </div>
             </div>
           </div>
@@ -82,8 +80,12 @@ export default function LandingPage() {
         <footer className="mt-20 flex items-center justify-between border-t pt-8 text-xs text-muted-foreground">
           <span>© {new Date().getFullYear()} vidora</span>
           <div className="flex gap-4">
-            <Link href="/home" className="hover:text-foreground">Dashboard</Link>
-            <Link href="/home" className="hover:text-foreground">Upload</Link>
+            <Link href="/home" className="hover:text-foreground">
+              Dashboard
+            </Link>
+            <Link href="/home" className="hover:text-foreground">
+              Upload
+            </Link>
           </div>
         </footer>
       </div>
