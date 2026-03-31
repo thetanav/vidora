@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 
 import db from "@/lib/db";
 
-export async function POST(
-  _req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function POST(_req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
 
   const video = await db.video.findUnique({

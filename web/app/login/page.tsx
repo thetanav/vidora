@@ -1,12 +1,16 @@
-import { getSession, signIn } from "@/lib/auth-client";
+import { auth } from "@/lib/auth";
+import { signIn } from "@/lib/auth-client";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
 import Link from "next/link";
+import { headers } from "next/headers";
 
 export default async function LoginPage() {
-  const { data } = await getSession();
-  if (data?.user) redirect("/home");
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  if (session?.user) redirect("/home");
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6">
@@ -27,9 +31,7 @@ export default async function LoginPage() {
       <div className="w-full max-w-sm space-y-6 rounded-xl border bg-card/50 p-8">
         <div className="text-center">
           <h1 className="text-base font-medium">Welcome back</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Sign in to continue
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Sign in to continue</p>
         </div>
 
         <form
@@ -39,7 +41,8 @@ export default async function LoginPage() {
               provider: "google",
               callbackURL: "/home",
             });
-          }}>
+          }}
+        >
           <Button type="submit" className="w-full gap-2">
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -68,9 +71,7 @@ export default async function LoginPage() {
         </p>
       </div>
 
-      <Link
-        href="/"
-        className="mt-6 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/" className="mt-6 text-sm text-muted-foreground hover:text-foreground">
         Back to home
       </Link>
     </div>

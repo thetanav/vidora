@@ -24,9 +24,7 @@ export default function Error({
         </div>
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">Something went wrong</h3>
-          <p className="text-sm text-muted-foreground">
-            Failed to load videos. Please try again.
-          </p>
+          <p className="text-sm text-muted-foreground">Failed to load videos. Please try again.</p>
         </div>
         <Button onClick={reset} variant="outline" size="sm" className="gap-2">
           <RefreshCw className="h-4 w-4" />

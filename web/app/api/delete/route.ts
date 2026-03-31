@@ -1,10 +1,13 @@
-import { getSession } from "@/lib/auth-client";
+import { auth } from "@/lib/auth";
 import db from "@/lib/db";
 import { redis } from "@/lib/redis";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const { data: session } = await getSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }

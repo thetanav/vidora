@@ -7,12 +7,7 @@ interface PageShellProps {
   children: React.ReactNode;
 }
 
-export default function PageShell({
-  title,
-  description,
-  right,
-  children,
-}: PageShellProps) {
+export default function PageShell({ title, description, right, children }: PageShellProps) {
   return (
     <div className="flex min-h-full flex-col">
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-10">

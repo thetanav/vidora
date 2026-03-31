@@ -1,6 +1,7 @@
-import { getSession } from "@/lib/auth-client";
+import { auth } from "@/lib/auth";
 import db from "@/lib/db";
 import { redis } from "@/lib/redis";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -15,7 +16,9 @@ const uploadSchema = z.object({
 type UploadInput = z.infer<typeof uploadSchema>;
 
 export async function POST(req: Request) {
-  const { data: session } = await getSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -26,15 +29,12 @@ export async function POST(req: Request) {
     body = uploadSchema.parse(json);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request", issues: error.issues },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid request", issues: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { title, description, id, extension, thumbnailUrl } = body;
+  const { title, description, id, extension } = body;
 
   await db.video.create({
     data: {
@@ -43,15 +43,12 @@ export async function POST(req: Request) {
       description,
       extension,
       likes: 0,
-      thumbnail: thumbnailUrl || null,
+      thumbnail: "https://picsum.photos/720/1280",
       userId: session.user.id,
     },
   });
 
-  await redis.rpush(
-    "video-queue",
-    JSON.stringify({ name: id, ext: extension, attempts: 0 }),
-  );
+  await redis.rpush("video-queue", JSON.stringify({ name: id, ext: extension, attempts: 0 }));
 
   return new NextResponse("ok");
 }

@@ -12,7 +12,7 @@ export const ourFileRouter = {
     },
     {
       awaitServerData: true,
-    }
+    },
   )
     .middleware(async ({ files }) => {
       const h = await headers();
@@ -41,7 +41,7 @@ export const ourFileRouter = {
     },
     {
       awaitServerData: true,
-    }
+    },
   )
     .middleware(async ({ files }) => {
       const h = await headers();

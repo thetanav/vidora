@@ -3,10 +3,7 @@ import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getPlaybackUrl } from "@/lib/video-urls";
 
-export async function GET(
-  _req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(_req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
 
   const video = await db.video.findUnique({

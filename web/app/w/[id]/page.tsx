@@ -6,11 +6,7 @@ import db from "@/lib/db";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ThumbsUp, Activity } from "lucide-react";
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const video = await db.video.findUnique({ where: { id } });
   if (!video) notFound();
@@ -19,7 +15,6 @@ export default async function Page({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-sm">
         <div className="flex h-14 items-center px-4">
           <Link href="/home">
@@ -82,9 +77,7 @@ export default async function Page({
 
           {video.description && (
             <div className="mt-4 rounded-lg border border-border/50 bg-muted/30 p-3">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {video.description}
-              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{video.description}</p>
             </div>
           )}
         </div>

@@ -33,8 +33,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-            Upload, transcode, and share your videos with a clean, fast
-            dashboard.
+            Upload, transcode, and share your videos with a clean, fast dashboard.
           </p>
 
           <div className="mt-8 flex items-center justify-center gap-3">
@@ -58,9 +57,7 @@ export default function LandingPage() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                   <Play className="h-5 w-5 text-muted-foreground fill-muted-foreground" />
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Video preview
-                </p>
+                <p className="mt-3 text-sm text-muted-foreground">Video preview</p>
               </div>
             </div>
           </div>

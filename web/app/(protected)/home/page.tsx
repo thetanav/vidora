@@ -1,15 +1,18 @@
-import { getSession } from "@/lib/auth-client";
+import { auth } from "@/lib/auth";
 import db from "@/lib/db";
 import VideoCard from "@/components/video-card";
 import PageShell from "@/components/page-shell";
 import { Video } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const { data: session } = await getSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   if (!session?.user?.id) return null;
 
   const videos = await db.video.findMany({
@@ -25,7 +28,8 @@ export default async function Page() {
         <Button asChild size="sm">
           <Link href="/upload">Upload</Link>
         </Button>
-      }>
+      }
+    >
       {videos.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-12 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
@@ -33,9 +37,7 @@ export default async function Page() {
           </div>
           <div className="space-y-1">
             <h3 className="font-medium text-sm">No videos yet</h3>
-            <p className="text-sm text-muted-foreground">
-              Upload your first video to get started.
-            </p>
+            <p className="text-sm text-muted-foreground">Upload your first video to get started.</p>
           </div>
           <Button asChild variant="secondary" size="sm">
             <Link href="/upload">Upload video</Link>

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getSession } from "@/lib/auth-client";
+import { auth } from "@/lib/auth";
 import db from "@/lib/db";
 import { redis } from "@/lib/redis";
+import { headers } from "next/headers";
 
 const updateSchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
@@ -19,11 +20,10 @@ async function getOwnedVideo(id: string, userId: string) {
   });
 }
 
-export async function PATCH(
-  req: Request,
-  context: { params: Promise<{ id: string }> },
-) {
-  const { data: session } = await getSession();
+export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -39,10 +39,7 @@ export async function PATCH(
     body = updateSchema.parse(await req.json());
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request", issues: error.issues },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid request", issues: error.issues }, { status: 400 });
     }
 
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
@@ -56,20 +53,17 @@ export async function PATCH(
     where: { id },
     data: {
       ...(body.title ? { title: body.title } : {}),
-      ...(body.description !== undefined
-        ? { description: body.description }
-        : {}),
+      ...(body.description !== undefined ? { description: body.description } : {}),
     },
   });
 
   return NextResponse.json(updated);
 }
 
-export async function DELETE(
-  _req: Request,
-  context: { params: Promise<{ id: string }> },
-) {
-  const { data: session } = await getSession();
+export async function DELETE(_req: Request, context: { params: Promise<{ id: string }> }) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }

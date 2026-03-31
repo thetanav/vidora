@@ -41,9 +41,7 @@ export default function TranscodingItem({ video }: TranscodingItemProps) {
     <div className="bg-card border border-border rounded-xl p-6 hover:border-primary/50 transition-all">
       <div className="flex items-start justify-between mb-5">
         <div className="flex-1">
-          <h3 className="font-semibold text-foreground text-lg mb-1">
-            {video.title}
-          </h3>
+          <h3 className="font-semibold text-foreground text-lg mb-1">{video.title}</h3>
           <p className="text-sm text-muted-foreground">
             {new Date(video.createdAt).toDateString()}
           </p>

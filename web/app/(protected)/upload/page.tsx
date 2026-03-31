@@ -1,25 +1,17 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Upload, CheckCircle2, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { Upload, CheckCircle2, X, Loader2 } from "lucide-react";
 import PageShell from "@/components/page-shell";
 import { UploadButton } from "@/components/uploadthing";
 import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useUploadThing } from "@/components/uploadthing";
 
 interface UploadedFile {
   name: string;
@@ -33,155 +25,12 @@ export const dynamic = "force-dynamic";
 export default function Page() {
   const router = useRouter();
   const [file, setFile] = useState<UploadedFile | null>(null);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState("Aari Aari");
   const [extension, setExtension] = useState<string | null>(null);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState("Dhurandhar");
   const [id] = useState(() => nanoid(16));
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const [isCapturingThumbnail, setIsCapturingThumbnail] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const { startUpload: uploadThumbnail } = useUploadThing("thumbnailUploader", {
-    headers: { "x-video-id": id },
-    onClientUploadComplete: (res) => {
-      if (res?.[0]) {
-        setThumbnailUrl(res[0].ufsUrl);
-        toast.success("Thumbnail captured!");
-      }
-    },
-    onUploadError: (error) => {
-      toast.error(`Thumbnail upload failed: ${error.message}`);
-    },
-  });
-
-  const compressImage = useCallback(async (
-    canvas: HTMLCanvasElement,
-    maxSizeBytes: number = 4 * 1024 * 1024 // 4MB
-  ): Promise<Blob> => {
-    let quality = 0.9;
-    let blob: Blob | null = null;
-
-    // Try progressively lower quality until under size limit
-    while (quality > 0.1) {
-      blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob((b) => resolve(b), "image/jpeg", quality);
-      });
-
-      if (blob && blob.size <= maxSizeBytes) {
-        return blob;
-      }
-
-      quality -= 0.1;
-    }
-
-    // If still too large, scale down the canvas
-    if (!blob || blob.size > maxSizeBytes) {
-      let scale = 0.8;
-      const originalWidth = canvas.width;
-      const originalHeight = canvas.height;
-
-      while (scale > 0.2) {
-        const scaledCanvas = document.createElement("canvas");
-        scaledCanvas.width = Math.floor(originalWidth * scale);
-        scaledCanvas.height = Math.floor(originalHeight * scale);
-
-        const ctx = scaledCanvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-
-          blob = await new Promise<Blob | null>((resolve) => {
-            scaledCanvas.toBlob((b) => resolve(b), "image/jpeg", 0.85);
-          });
-
-          if (blob && blob.size <= maxSizeBytes) {
-            return blob;
-          }
-        }
-
-        scale -= 0.1;
-      }
-    }
-
-    // Return whatever we have, even if over limit
-    if (!blob) {
-      throw new Error("Failed to compress image");
-    }
-
-    return blob;
-  }, []);
-
-  const captureRandomFrame = useCallback(async (videoFile: File) => {
-    setIsCapturingThumbnail(true);
-
-    try {
-      const video = document.createElement("video");
-      video.preload = "metadata";
-      video.muted = true;
-      video.playsInline = true;
-
-      const videoUrl = URL.createObjectURL(videoFile);
-      video.src = videoUrl;
-
-      await new Promise<void>((resolve, reject) => {
-        video.onloadedmetadata = () => resolve();
-        video.onerror = () => reject(new Error("Failed to load video metadata"));
-      });
-
-      // iOS/Safari sometimes won't render frames until playback starts.
-      try {
-        await video.play();
-        video.pause();
-      } catch {
-        // Ignore autoplay restrictions; seek may still work.
-      }
-
-      // Get random time from first 3 minutes (or video duration if shorter)
-      const maxTime = Math.min(video.duration || 0, 180); // 180 seconds = 3 minutes
-      const randomTime = maxTime > 0 ? Math.random() * maxTime : 0;
-
-      // Some browsers need a short delay before seeking.
-      video.currentTime = randomTime;
-
-      await new Promise<void>((resolve, reject) => {
-        video.onseeked = () => resolve();
-        video.onerror = () => reject(new Error("Failed to seek video"));
-      });
-
-      // Create canvas and capture frame
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Failed to get canvas context");
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Compress to under 4MB
-      const blob = await compressImage(canvas, 4 * 1024 * 1024);
-
-      // Create preview
-      const previewUrl = URL.createObjectURL(blob);
-      setThumbnailPreview(previewUrl);
-
-      // Upload thumbnail
-      const thumbnailFile = new File([blob], `thumbnail-${id}.jpg`, {
-        type: "image/jpeg",
-      });
-
-      await uploadThumbnail([thumbnailFile]);
-
-      // Cleanup
-      URL.revokeObjectURL(videoUrl);
-    } catch (error) {
-      console.error("Failed to capture thumbnail:", error);
-      toast.error("Failed to capture thumbnail");
-    } finally {
-      setIsCapturingThumbnail(false);
-    }
-  }, [id, uploadThumbnail, compressImage]);
 
   const {
     mutate: uploadVideo,
@@ -198,7 +47,6 @@ export default function Page() {
           description,
           id,
           extension,
-          thumbnailUrl,
         }),
       });
       if (!res.ok) {
@@ -216,8 +64,6 @@ export default function Page() {
   const removeFile = () => {
     setFile(null);
     setExtension(null);
-    setThumbnailUrl(null);
-    setThumbnailPreview(null);
   };
 
   return (
@@ -270,9 +116,7 @@ export default function Page() {
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">
-                      {file.name}
-                    </p>
+                    <p className="font-medium text-foreground truncate">{file.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {(file.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
@@ -281,49 +125,19 @@ export default function Page() {
                     variant="ghost"
                     size="icon"
                     onClick={removeFile}
-                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  >
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
-
-                {/* Thumbnail Preview */}
-                {(thumbnailPreview || isCapturingThumbnail) && (
-                  <div className="space-y-2">
-                    <Label>Thumbnail</Label>
-                    <div className="relative w-48 aspect-video rounded-lg overflow-hidden border border-border bg-muted">
-                      {isCapturingThumbnail ? (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : thumbnailPreview ? (
-                        <img
-                          src={thumbnailPreview}
-                          alt="Video thumbnail"
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : null}
-                    </div>
-                    {thumbnailUrl && (
-                      <p className="text-xs text-green-500 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Thumbnail uploaded
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
             ) : (
               <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 hover:bg-accent/30 transition-all cursor-pointer">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <Upload className="w-6 h-6 text-primary" />
                 </div>
-                <p className="text-sm font-medium text-foreground mb-1">
+                <p className="text-sm font-medium text-foreground mb-4">
                   Click to upload or drag and drop
-                </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  MP4, MOV, or AVI (max 500MB)
                 </p>
                 <UploadButton
                   endpoint="videoUploader"
@@ -333,20 +147,6 @@ export default function Page() {
                       setFile(res[0]);
                       const ext = res[0].name?.split(".").pop()?.toLowerCase();
                       if (ext) setExtension(ext);
-
-                      // Capture thumbnail directly from the selected local file (no `ufsUrl` fetch).
-                      try {
-                        const input = document.querySelector(
-                          'input[type="file"][data-ut-element="input"]'
-                        ) as HTMLInputElement | null;
-
-                        const localFile = input?.files?.[0];
-                        if (localFile) {
-                          await captureRandomFrame(localFile);
-                        }
-                      } catch (error) {
-                        console.error("Failed to capture thumbnail from local file:", error);
-                      }
                     }
                   }}
                   onUploadError={(error: Error) => {
@@ -359,10 +159,11 @@ export default function Page() {
 
           <div className="pt-4">
             <Button
-              disabled={!file || !title.trim() || isPending || isSuccess || isCapturingThumbnail}
+              disabled={!file || !title.trim() || isPending || isSuccess}
               size="lg"
               className="w-full gap-2"
-              onClick={() => uploadVideo()}>
+              onClick={() => uploadVideo()}
+            >
               {isSuccess ? (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
@@ -372,11 +173,6 @@ export default function Page() {
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Uploading...
-                </>
-              ) : isCapturingThumbnail ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating Thumbnail...
                 </>
               ) : (
                 <>

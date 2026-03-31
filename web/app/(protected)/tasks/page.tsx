@@ -2,9 +2,10 @@ import PageShell from "@/components/page-shell";
 
 import { dehydrate, QueryClient } from "@tanstack/react-query";
 
-import { getSession } from "@/lib/auth-client";
+import { auth } from "@/lib/auth";
 import db from "@/lib/db";
 import { RQHydrate } from "@/components/rq-hydrate";
+import { headers } from "next/headers";
 import TasksClient from "./tasks-client";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,9 @@ async function getJobVideos(userId: string) {
 }
 
 export default async function Page() {
-  const { data: session } = await getSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   if (!session?.user?.id) {
     return null;
   }

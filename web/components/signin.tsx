@@ -1,7 +1,6 @@
 "use client";
 
-import { signIn, signOut, useSession } from "@/lib/auth-client";
-
+import { signIn, signOut } from "@/lib/auth-client";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -12,17 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-export default function AuthButton() {
-  const { data: session, isPending, isRefetching } = useSession();
-
-  if (isPending || isRefetching) {
-    return (
-      <Button size="icon" variant="ghost" disabled>
-        <span className="sr-only">Loading</span>
-      </Button>
-    );
-  }
-
+export default function AuthButton({ session }: { session: any }) {
   if (session) {
     return (
       <DropdownMenu>
@@ -30,13 +19,13 @@ export default function AuthButton() {
           <button className="w-full cursor-pointer flex items-center justify-between overflow-clip hover:bg-accent rounded-md outline-none select-none">
             <div className="flex flex-col items-start">
               <h2>{session.user?.name!}</h2>
-              <h2 className="text-muted-foreground text-sm text-ellipsis">
+              <h2 className="text-muted-foreground text-xs text-ellipsis">
                 {session.user?.email!}
               </h2>
             </div>
             <img
               src={session.user?.image ?? ""}
-              className="w-9 h-9 rounded-full"
+              className="w-7 h-7 rounded-full"
               alt="User avatar"
             />
           </button>
@@ -56,7 +45,8 @@ export default function AuthButton() {
                     },
                   },
                 })
-              }>
+              }
+            >
               Logout
             </DropdownMenuItem>
           </DropdownMenuGroup>
@@ -74,7 +64,8 @@ export default function AuthButton() {
           provider: "google",
           callbackURL: "/home",
         })
-      }>
+      }
+    >
       Signin with Google
     </Button>
   );

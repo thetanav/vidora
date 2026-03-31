@@ -116,7 +116,8 @@ export default function VideoCard({ video }: VideoCardProps) {
     done: { label: null, class: "" },
   };
 
-  const status = video.status === "failed" ? "failed" : video.status !== "done" ? "processing" : "done";
+  const status =
+    video.status === "failed" ? "failed" : video.status !== "done" ? "processing" : "done";
 
   return (
     <Link href={`/w/${video.id}`} className="group block">
@@ -179,7 +180,10 @@ export default function VideoCard({ video }: VideoCardProps) {
               Copy watch link
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleDelete} className="cursor-pointer text-xs text-destructive">
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="cursor-pointer text-xs text-destructive"
+            >
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>

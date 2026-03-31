@@ -4,7 +4,7 @@ The web app is a Next.js dashboard and playback surface for Vidora.
 
 ## Responsibilities
 
-- Handles Google authentication with NextAuth
+- Handles Google authentication with Better Auth
 - Accepts uploads and enqueues worker jobs
 - Shows user-scoped library and job state
 - Serves playback metadata and public watch pages
@@ -30,7 +30,8 @@ NEXT_PUBLIC_R2_PUBLIC_URL="https://..."
 UPLOADTHING_TOKEN="..."
 AUTH_GOOGLE_ID="..."
 AUTH_GOOGLE_SECRET="..."
-AUTH_SECRET="..."
+BETTER_AUTH_SECRET="..."
+BETTER_AUTH_URL="http://localhost:3000"
 WORKER_SHARED_SECRET=""
 ```
 

@@ -1,6 +1,7 @@
-import { getSession } from "@/lib/auth-client";
+import { auth } from "@/lib/auth";
 import db from "@/lib/db";
 import { redis } from "@/lib/redis";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -18,12 +19,11 @@ function isWorkerAuthorized(req: Request) {
   return req.headers.get("x-worker-secret") === secret;
 }
 
-export async function GET(
-  _req: Request,
-  context: { params: Promise<{ id: string }> },
-) {
+export async function GET(_req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const { data: session } = await getSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -45,17 +45,12 @@ export async function GET(
 
   const redisProgress = Number(await redis.get(`status:${id}`));
   const percent =
-    Number.isFinite(redisProgress) && redisProgress > 0
-      ? redisProgress
-      : video.progress;
+    Number.isFinite(redisProgress) && redisProgress > 0 ? redisProgress : video.progress;
 
   return NextResponse.json({ percent, status: video.status });
 }
 
-export async function POST(
-  req: Request,
-  context: { params: Promise<{ id: string }> },
-) {
+export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   if (!isWorkerAuthorized(req)) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -66,10 +61,7 @@ export async function POST(
     body = workerStatusSchema.parse(await req.json());
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request", issues: error.issues },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid request", issues: error.issues }, { status: 400 });
     }
 
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
@@ -81,12 +73,7 @@ export async function POST(
   }
 
   const progress =
-    body.progress ??
-    (body.status === "done"
-      ? 100
-      : body.status === "failed"
-        ? video.progress
-        : 0);
+    body.progress ?? (body.status === "done" ? 100 : body.status === "failed" ? video.progress : 0);
 
   await db.video.update({
     where: { id },

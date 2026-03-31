@@ -1,16 +1,9 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  Play,
-  Activity,
-  MessageSquare,
-  LayoutDashboard,
-  Upload,
-} from "lucide-react";
+import { Play, Activity, MessageSquare, LayoutDashboard, Upload } from "lucide-react";
 import AuthButton from "./signin";
 import { cn } from "@/lib/utils";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const navItems = [
   { path: "/home", label: "Videos", icon: LayoutDashboard },
@@ -19,11 +12,10 @@ const navItems = [
   { path: "/feedback", label: "Feedback", icon: MessageSquare },
 ];
 
-export default function Sidebar() {
-  const pathname = usePathname();
-
-  const isActive = (path: string) =>
-    pathname === path || pathname.startsWith(`${path}/`);
+export default async function Sidebar() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   return (
     <aside className="w-64 flex flex-col border-r border-border/50 bg-card/30">
@@ -32,16 +24,14 @@ export default function Sidebar() {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-violet-500/20 transition-shadow">
             <Play className="w-3.5 h-3.5 text-white fill-white" />
           </div>
-          <span className="font-semibold text-foreground text-xl tracking-tight">
-            vidora
-          </span>
+          <span className="font-semibold text-foreground text-xl tracking-tight">vidora</span>
         </Link>
       </div>
 
       <nav className="flex-1 px-3 py-2 space-y-0.5">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.path);
+          const active = false;
           return (
             <Link
               key={item.path}
@@ -50,7 +40,9 @@ export default function Sidebar() {
                 active
                   ? "bg-foreground/5 text-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-              }`}>
+              }`}
+              prefetch={true}
+            >
               <Icon
                 className={cn(
                   "w-4 h-4 group-hover:text-foreground",
@@ -63,8 +55,8 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-3 border-t border-border/50">
-        <AuthButton />
+      <div className="p-3">
+        <AuthButton session={session} />
       </div>
     </aside>
   );
