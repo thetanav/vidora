@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-client";
 import db from "@/lib/db";
 import { redis } from "@/lib/redis";
 import { NextResponse } from "next/server";
@@ -18,9 +18,12 @@ function isWorkerAuthorized(req: Request) {
   return req.headers.get("x-worker-secret") === secret;
 }
 
-export async function GET(_req: Request, context: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  context: { params: Promise<{ id: string }> },
+) {
   const { id } = await context.params;
-  const session = await auth();
+  const { data: session } = await getSession();
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -41,14 +44,18 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
   }
 
   const redisProgress = Number(await redis.get(`status:${id}`));
-  const percent = Number.isFinite(redisProgress) && redisProgress > 0
-    ? redisProgress
-    : video.progress;
+  const percent =
+    Number.isFinite(redisProgress) && redisProgress > 0
+      ? redisProgress
+      : video.progress;
 
   return NextResponse.json({ percent, status: video.status });
 }
 
-export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: Request,
+  context: { params: Promise<{ id: string }> },
+) {
   if (!isWorkerAuthorized(req)) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -61,7 +68,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid request", issues: error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -73,9 +80,13 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const progress = body.progress ?? (
-    body.status === "done" ? 100 : body.status === "failed" ? video.progress : 0
-  );
+  const progress =
+    body.progress ??
+    (body.status === "done"
+      ? 100
+      : body.status === "failed"
+        ? video.progress
+        : 0);
 
   await db.video.update({
     where: { id },

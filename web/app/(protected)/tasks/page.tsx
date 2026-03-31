@@ -2,7 +2,7 @@ import PageShell from "@/components/page-shell";
 
 import { dehydrate, QueryClient } from "@tanstack/react-query";
 
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-client";
 import db from "@/lib/db";
 import { RQHydrate } from "@/components/rq-hydrate";
 import TasksClient from "./tasks-client";
@@ -22,7 +22,7 @@ async function getJobVideos(userId: string) {
 }
 
 export default async function Page() {
-  const session = await auth();
+  const { data: session } = await getSession();
   if (!session?.user?.id) {
     return null;
   }

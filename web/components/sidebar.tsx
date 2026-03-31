@@ -10,6 +10,7 @@ import {
   Upload,
 } from "lucide-react";
 import AuthButton from "./signin";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { path: "/home", label: "Videos", icon: LayoutDashboard },
@@ -21,7 +22,8 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
+  const isActive = (path: string) =>
+    pathname === path || pathname.startsWith(`${path}/`);
 
   return (
     <aside className="w-64 flex flex-col border-r border-border/50 bg-card/30">
@@ -30,7 +32,7 @@ export default function Sidebar() {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-violet-500/20 transition-shadow">
             <Play className="w-3.5 h-3.5 text-white fill-white" />
           </div>
-          <span className="font-semibold text-foreground text-sm tracking-tight">
+          <span className="font-semibold text-foreground text-xl tracking-tight">
             vidora
           </span>
         </Link>
@@ -44,13 +46,17 @@ export default function Sidebar() {
             <Link
               key={item.path}
               href={item.path}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors duration-500 group ${
                 active
                   ? "bg-foreground/5 text-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-              }`}
-            >
-              <Icon className={`w-4 h-4 ${active ? "text-foreground" : "text-muted-foreground/70"}`} />
+              }`}>
+              <Icon
+                className={cn(
+                  "w-4 h-4 group-hover:text-foreground",
+                  active ? "text-foreground" : "text-muted-foreground/70 ",
+                )}
+              />
               <span>{item.label}</span>
             </Link>
           );

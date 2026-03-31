@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-client";
 import db from "@/lib/db";
 import { redis } from "@/lib/redis";
 
@@ -21,9 +21,9 @@ async function getOwnedVideo(id: string, userId: string) {
 
 export async function PATCH(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
+  const { data: session } = await getSession();
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -41,7 +41,7 @@ export async function PATCH(
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid request", issues: error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,7 +56,9 @@ export async function PATCH(
     where: { id },
     data: {
       ...(body.title ? { title: body.title } : {}),
-      ...(body.description !== undefined ? { description: body.description } : {}),
+      ...(body.description !== undefined
+        ? { description: body.description }
+        : {}),
     },
   });
 
@@ -65,9 +67,9 @@ export async function PATCH(
 
 export async function DELETE(
   _req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
+  const { data: session } = await getSession();
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }

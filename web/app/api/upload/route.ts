@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-client";
 import db from "@/lib/db";
 import { redis } from "@/lib/redis";
 import { NextResponse } from "next/server";
@@ -15,7 +15,7 @@ const uploadSchema = z.object({
 type UploadInput = z.infer<typeof uploadSchema>;
 
 export async function POST(req: Request) {
-  const session = await auth();
+  const { data: session } = await getSession();
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -26,7 +26,10 @@ export async function POST(req: Request) {
     body = uploadSchema.parse(json);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Invalid request", issues: error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid request", issues: error.issues },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -45,7 +48,10 @@ export async function POST(req: Request) {
     },
   });
 
-  await redis.rpush("video-queue", JSON.stringify({ name: id, ext: extension, attempts: 0 }));
+  await redis.rpush(
+    "video-queue",
+    JSON.stringify({ name: id, ext: extension, attempts: 0 }),
+  );
 
   return new NextResponse("ok");
 }

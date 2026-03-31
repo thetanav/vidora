@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-client";
 import db from "@/lib/db";
 import VideoCard from "@/components/video-card";
 import PageShell from "@/components/page-shell";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const session = await auth();
+  const { data: session } = await getSession();
   if (!session?.user?.id) return null;
 
   const videos = await db.video.findMany({
@@ -25,8 +25,7 @@ export default async function Page() {
         <Button asChild size="sm">
           <Link href="/upload">Upload</Link>
         </Button>
-      }
-    >
+      }>
       {videos.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-12 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
