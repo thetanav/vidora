@@ -1,5 +1,5 @@
 import PageShell from "@/components/page-shell";
-import { MessageSquare, Github } from "lucide-react";
+import { MessageSquare, GitBranch } from "lucide-react";
 import Link from "next/link";
 
 export default function Page() {
@@ -19,9 +19,8 @@ export default function Page() {
             <Link
               href="https://github.com"
               target="_blank"
-              className="flex items-center justify-center gap-2 rounded-lg border p-3 text-sm hover:bg-accent transition-colors"
-            >
-              <Github className="h-4 w-4" />
+              className="flex items-center justify-center gap-2 rounded-lg border p-3 text-sm hover:bg-accent transition-colors">
+              <GitBranch className="h-4 w-4" />
               Open an issue on GitHub
             </Link>
           </div>

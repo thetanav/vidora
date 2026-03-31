@@ -18,14 +18,7 @@ export default function PageShell({
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex h-14 items-center justify-between px-6">
           <div className="min-w-0">
-            <h1 className="text-sm font-medium text-foreground">
-              {title}
-            </h1>
-            {description ? (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {description}
-              </p>
-            ) : null}
+            <h1 className="text-sm font-medium text-foreground">{title}</h1>
           </div>
           {right ? <div className="shrink-0">{right}</div> : null}
         </div>

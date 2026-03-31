@@ -366,7 +366,7 @@ async function processJob(job: Job) {
         await uploadToR2(filePath, `${name}/${file}`, contentType);
       }
       // Upload thumbnail
-      await uploadToR2(thumbnailPath, `${name}/image.jpg`, "image/jpeg");
+      await uploadToR2(thumbnailPath, `${name}/thumb.jpg`, "image/jpeg");
       // Delete local thumbnail
       fs.unlinkSync(thumbnailPath);
       // Delete the output folder
